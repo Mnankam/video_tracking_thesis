@@ -26,6 +26,8 @@ Due to illumination flickering (50 Hz lab power supply) and the large data volum
 ---
 
 ## Repository Structure
+
+```
 video-tracking-thesis/
 │
 ├── README.md
@@ -33,23 +35,24 @@ video-tracking-thesis/
 ├── .gitignore
 │
 ├── src/
-│ ├── deflicker.py
-│ ├── segmentation.py
-│ ├── tracking.py
-│ └── pipeline.py
+│   ├── deflicker.py
+│   ├── segmentation.py
+│   ├── tracking.py
+│   └── pipeline.py
 │
 ├── scripts/
-│ ├── run_chunk.py
-│ └── submit_array.sh
+│   ├── run_chunk.py
+│   └── submit_array.sh
 │
 ├── configs/
-│ └── config.yaml
+│   └── config.yaml
 │
 ├── apptainer/
-│ └── detectron2.def
+│   └── detectron2.def
 │
 └── docs/
-└── notes.md
+    └── notes.md
+```
 
 ---
 
