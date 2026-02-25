@@ -1,0 +1,33 @@
+# Core scientific stack
+numpy
+scipy
+pandas
+matplotlib
+
+# Video & Image processing
+opencv-python
+scikit-image
+imageio
+
+# Tracking / Filtering
+filterpy
+lap
+tqdm
+
+# Deep Learning
+torch
+torchvision
+torchaudio
+
+# Detectron2 (optional – meist über Container installieren)
+# detectron2 @ git+https://github.com/facebookresearch/detectron2.git
+
+# Config management
+pyyaml
+
+# Utilities
+rich
+loguru
+
+# Optional evaluation
+scikit-learn
