@@ -1,13 +1,17 @@
 # Core scientific stack
-numpy
-scipy
-pandas
-matplotlib
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+matplotlib>=3.7
+
+# Image processing (VERY IMPORTANT)
+Pillow>=10.0
 
 # Video & Image processing
-opencv-python
+opencv-python-headless
 scikit-image
 imageio
+ffmpeg-python
 
 # Tracking / Filtering
 filterpy
@@ -15,19 +19,24 @@ lap
 tqdm
 
 # Deep Learning
-torch
-torchvision
-torchaudio
+torch>=2.1
+torchvision>=0.16
+torchaudio>=2.1
 
-# Detectron2 (optional – meist über Container installieren)
+# Detectron2 (optional – über Container installieren)
 # detectron2 @ git+https://github.com/facebookresearch/detectron2.git
 
 # Config management
 pyyaml
 
+# CLI / scripts
+click
+
 # Utilities
 rich
 loguru
+python-dotenv
 
-# Optional evaluation
+# Evaluation
 scikit-learn
+motmetrics
