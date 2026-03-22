@@ -28,4 +28,4 @@ results/
 *.ckpt
 
 # Logs
-*.log
+*.logdata/
