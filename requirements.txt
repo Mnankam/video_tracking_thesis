@@ -4,7 +4,7 @@ scipy>=1.10
 pandas>=2.0
 matplotlib>=3.7
 
-# Image processing (VERY IMPORTANT)
+# Image processing 
 Pillow>=10.0
 
 # Video & Image processing
