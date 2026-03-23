@@ -1,0 +1,20 @@
+video_path: data/video.MP4
+output_csv: outputs/results.csv
+
+start_frame: 0
+end_frame: 1000
+
+resize_width: 960
+resize_height: 540
+
+enable_deflicker: true
+enable_tracking: true
+
+save_debug_frames: false
+debug_dir: outputs/debug
+
+segmentation_mode: simple
+device: cpu
+
+save_summary: true
+summary_csv: outputs/summary.csv
