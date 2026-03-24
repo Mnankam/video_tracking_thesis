@@ -10,6 +10,7 @@ import yaml
 
 from src.deflicker import Deflicker
 from src.segmentation import SimpleSegmenter, Detectron2Segmenter
+from src.bed_edge import BedEdgeDetector
 from src.tracking import KalmanTracker
 from src.evaluation import (
     Evaluator,
@@ -32,6 +33,7 @@ class PipelineConfig:
 
     enable_deflicker: bool = True
     enable_tracking: bool = True
+    enable_bed_edge: bool = True
 
     save_debug_frames: bool = False
     debug_dir: str = "outputs/debug"
@@ -44,6 +46,8 @@ class PipelineConfig:
 
     save_summary: bool = True
     summary_csv: str = "outputs/summary.csv"
+
+    bed_edge_roi: Optional[list[int]] = None
 
 
 class VideoPipeline:
@@ -79,6 +83,12 @@ class VideoPipeline:
             else None
         )
 
+        # Bettkantendetektor initialisieren
+        self.bed_edge_detector = None
+        if config.enable_bed_edge:
+            roi_tuple = tuple(config.bed_edge_roi) if config.bed_edge_roi else None
+            self.bed_edge_detector = BedEdgeDetector(roi=roi_tuple)
+
         output_dir = os.path.dirname(config.output_csv)
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
@@ -99,7 +109,7 @@ class VideoPipeline:
             )
         return frame
 
-    def _write_debug_frame(self, frame_idx: int, frame, mask, tracks) -> None:
+    def _write_debug_frame(self, frame_idx: int, frame, mask, tracks, bed_edge_y=None) -> None:
         vis = frame.copy()
 
         for track in tracks:
@@ -116,6 +126,26 @@ class VideoPipeline:
                 0.5,
                 (255, 255, 255),
                 1,
+                cv2.LINE_AA,
+            )
+
+        # Bettkante einzeichnen
+        if bed_edge_y is not None:
+            cv2.line(
+                vis,
+                (0, int(bed_edge_y)),
+                (vis.shape[1] - 1, int(bed_edge_y)),
+                (255, 0, 0),
+                2,
+            )
+            cv2.putText(
+                vis,
+                f"bed_edge_y={int(bed_edge_y)}",
+                (10, max(25, int(bed_edge_y) - 10)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 0, 0),
+                2,
                 cv2.LINE_AA,
             )
 
@@ -162,6 +192,7 @@ class VideoPipeline:
                     "center_x",
                     "center_y",
                     "area",
+                    "bed_edge_y",
                     "processing_time_s",
                 ]
             )
@@ -177,6 +208,12 @@ class VideoPipeline:
 
                 if self.deflicker is not None:
                     frame = self.deflicker.apply(frame)
+
+                # Bettkante bestimmen
+                bed_edge_y = None
+                if self.bed_edge_detector is not None:
+                    bed_edge_result = self.bed_edge_detector.detect(frame)
+                    bed_edge_y = bed_edge_result["y_edge"]
 
                 mask, detections = self.segmenter.segment(frame)
 
@@ -208,6 +245,7 @@ class VideoPipeline:
                                 round(cx, 3),
                                 round(cy, 3),
                                 round(t["area"], 3),
+                                round(bed_edge_y, 3) if bed_edge_y is not None else "",
                                 round(elapsed, 6),
                             ]
                         )
@@ -224,12 +262,13 @@ class VideoPipeline:
                             "",
                             "",
                             "",
+                            round(bed_edge_y, 3) if bed_edge_y is not None else "",
                             round(elapsed, 6),
                         ]
                     )
 
                 if self.config.save_debug_frames:
-                    self._write_debug_frame(frame_idx, frame, mask, tracks)
+                    self._write_debug_frame(frame_idx, frame, mask, tracks, bed_edge_y)
 
                 processed_frames += 1
                 frame_idx += 1
@@ -271,6 +310,7 @@ def load_config(path: str) -> PipelineConfig:
         resize_height=data.get("resize_height"),
         enable_deflicker=data.get("enable_deflicker", True),
         enable_tracking=data.get("enable_tracking", True),
+        enable_bed_edge=data.get("enable_bed_edge", True),
         save_debug_frames=data.get("save_debug_frames", False),
         debug_dir=data.get("debug_dir", "outputs/debug"),
         segmentation_mode=data.get("segmentation_mode", "simple"),
@@ -280,6 +320,7 @@ def load_config(path: str) -> PipelineConfig:
         device=data.get("device", "cpu"),
         save_summary=data.get("save_summary", True),
         summary_csv=data.get("summary_csv", "outputs/summary.csv"),
+        bed_edge_roi=data.get("bed_edge_roi"),
     )
 
 
