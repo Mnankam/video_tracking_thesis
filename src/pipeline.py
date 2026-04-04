@@ -11,7 +11,7 @@ import yaml
 from src.deflicker import FFTDeflicker
 from src.segmentation import PipeSegmenterCV, BedSegmenterCV, Detectron2Segmenter
 from src.bed_edge import BedEdgeDetector
-from src.tracking import KalmanTracker
+from src.tracking import SingleObjectTracker, MultiObjectTracker
 from src.evaluation import (
     Evaluator,
     TrackingStats,
@@ -120,11 +120,13 @@ class VideoPipeline:
             )
 
         # Tracking
-        self.tracker = (
-            KalmanTracker(max_distance=60.0, max_missed=5)
-            if config.enable_tracking
-            else None
-        )
+        if config.enable_tracking:
+            if config.segmentation_mode == "pipe_cv":
+                self.tracker = SingleObjectTracker()
+            else:
+                self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
+        else:
+            self.tracker = None
 
         # Bettkante
         self.bed_edge_detector = None
@@ -261,7 +263,15 @@ class VideoPipeline:
                 mask, detections = self.segmenter.segment(frame)
 
                 if self.tracker is not None:
-                    tracks = self.tracker.update(detections)
+                    tracker_result = self.tracker.update(detections)
+
+                    # SingleObjectTracker gibt entweder dict oder None zurück
+                    if isinstance(tracker_result, dict):
+                        tracks = [tracker_result]
+                    elif tracker_result is None:
+                        tracks = []
+                    else:
+                        tracks = tracker_result
                 else:
                     tracks = []
 
