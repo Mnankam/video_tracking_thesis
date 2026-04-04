@@ -1,0 +1,17 @@
+metric,value
+video_path,data/video.MP4
+output_csv,outputs/results.csv
+start_frame,0
+end_frame,100
+processed_frames,100
+video_fps,200.0
+segmentation_mode,simple
+device,cpu
+avg_processing_time_s,0.012598485946655273
+avg_pipeline_fps,79.37461725434447
+avg_track_count,45.88
+num_processed_frames,100.0
+avg_tracks_per_frame,45.88
+max_tracks_in_frame,52.0
+num_unique_track_ids,130.0
+total_track_observations,4588.0

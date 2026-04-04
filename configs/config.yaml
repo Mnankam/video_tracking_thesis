@@ -16,8 +16,17 @@ bed_edge_roi: [100, 100, 700, 300]
 save_debug_frames: true
 debug_dir: outputs/debug
 
-segmentation_mode: simple
+segmentation_mode: pipe_cv
 device: cpu
 
 save_summary: true
 summary_csv: outputs/summary.csv
+
+deflicker_fps: 200.0
+deflicker_freq: 50.0
+deflicker_use_second_harmonic: false
+deflicker_window_size: 256
+deflicker_min_history: 32
+deflicker_smooth_alpha: 0.2
+deflicker_use_median: true
+deflicker_roi: null

@@ -1,49 +1,79 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
 
 
-class SimpleSegmenter:
+class PipeSegmenterCV:
+    """
+    Klassische Segmentierung zur Bestimmung der Innenrohrposition.
+
+    Ziel:
+    - dominante Rohrstruktur im Bild lokalisieren
+    - Bounding Box und Zentrum ableiten
+
+    """
+
     def __init__(
         self,
-        min_area: float = 50.0,
+        min_area: float = 300.0,
         blur_kernel: Tuple[int, int] = (5, 5),
         use_morphology: bool = True,
+        morphology_kernel_size: int = 5,
+        roi: Optional[Tuple[int, int, int, int]] = None,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
         self.use_morphology = use_morphology
+        self.morphology_kernel_size = morphology_kernel_size
+        self.roi = roi
 
-    def _preprocess_gray(self, frame: np.ndarray) -> np.ndarray:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
-        return gray
+    def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
+        if self.roi is None:
+            return frame, 0, 0
+        x, y, w, h = self.roi
+        return frame[y:y + h, x:x + w], x, y
 
     def _postprocess_mask(self, mask: np.ndarray) -> np.ndarray:
         if not self.use_morphology:
             return mask
 
-        kernel = np.ones((3, 3), np.uint8)
+        kernel = np.ones(
+            (self.morphology_kernel_size, self.morphology_kernel_size),
+            np.uint8,
+        )
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
         return mask
 
-    def _extract_detections(self, mask: np.ndarray) -> List[Dict[str, Any]]:
+    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+        roi_frame, x_offset, y_offset = self._extract_roi(frame)
+
+        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
+
+        _, mask = cv2.threshold(
+            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        )
+
+        mask = self._postprocess_mask(mask)
+
         contours, _ = cv2.findContours(
             mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
         detections: List[Dict[str, Any]] = []
-
         for contour in contours:
             area = float(cv2.contourArea(contour))
             if area < self.min_area:
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
+            x += x_offset
+            y += y_offset
+
             cx = x + w / 2.0
             cy = y + h / 2.0
 
@@ -52,29 +82,105 @@ class SimpleSegmenter:
                     "bbox": (int(x), int(y), int(w), int(h)),
                     "center": (float(cx), float(cy)),
                     "area": area,
-                    "contour": contour,
+                    "label": "inner_pipe",
                 }
             )
 
-        return detections
+        full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+        full_mask[y_offset:y_offset + mask.shape[0], x_offset:x_offset + mask.shape[1]] = mask
+
+        return full_mask, detections
+
+
+class BedSegmenterCV:
+    """
+    Klassische Segmentierung für das Partikelbett.
+
+    Ziel:
+    - Bettbereich isolieren
+    - optionale Ableitung von Bettgrenzen oder Bettregionen
+    """
+
+    def __init__(
+        self,
+        min_area: float = 150.0,
+        blur_kernel: Tuple[int, int] = (5, 5),
+        use_morphology: bool = True,
+        morphology_kernel_size: int = 3,
+        roi: Optional[Tuple[int, int, int, int]] = None,
+    ) -> None:
+        self.min_area = min_area
+        self.blur_kernel = blur_kernel
+        self.use_morphology = use_morphology
+        self.morphology_kernel_size = morphology_kernel_size
+        self.roi = roi
+
+    def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
+        if self.roi is None:
+            return frame, 0, 0
+        x, y, w, h = self.roi
+        return frame[y:y + h, x:x + w], x, y
+
+    def _postprocess_mask(self, mask: np.ndarray) -> np.ndarray:
+        if not self.use_morphology:
+            return mask
+
+        kernel = np.ones(
+            (self.morphology_kernel_size, self.morphology_kernel_size),
+            np.uint8,
+        )
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        return mask
 
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
-        gray = self._preprocess_gray(frame)
+        roi_frame, x_offset, y_offset = self._extract_roi(frame)
+
+        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
         _, mask = cv2.threshold(
             gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
         )
 
         mask = self._postprocess_mask(mask)
-        detections = self._extract_detections(mask)
 
-        return mask, detections
+        contours, _ = cv2.findContours(
+            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        detections: List[Dict[str, Any]] = []
+        for contour in contours:
+            area = float(cv2.contourArea(contour))
+            if area < self.min_area:
+                continue
+
+            x, y, w, h = cv2.boundingRect(contour)
+            x += x_offset
+            y += y_offset
+
+            cx = x + w / 2.0
+            cy = y + h / 2.0
+
+            detections.append(
+                {
+                    "bbox": (int(x), int(y), int(w), int(h)),
+                    "center": (float(cx), float(cy)),
+                    "area": area,
+                    "label": "particle_bed",
+                }
+            )
+
+        full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+        full_mask[y_offset:y_offset + mask.shape[0], x_offset:x_offset + mask.shape[1]] = mask
+
+        return full_mask, detections
 
 
 class Detectron2Segmenter:
     """
     Detectron2-basierte Instanzsegmentierung.
-    Erwartet funktionierende Detectron2-Installation im HPC/Container.
+    Erwartet funktionierende Detectron2-Installation im HPC/Container hier wird Podman verwendet.
     """
 
     def __init__(
@@ -109,6 +215,11 @@ class Detectron2Segmenter:
 
         boxes = instances.pred_boxes.tensor.numpy()
         masks = instances.pred_masks.numpy() if instances.has("pred_masks") else None
+        classes = (
+            instances.pred_classes.numpy().tolist()
+            if instances.has("pred_classes")
+            else None
+        )
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.astype(int)
@@ -126,6 +237,7 @@ class Detectron2Segmenter:
                     "bbox": (x1, y1, w, h),
                     "center": (cx, cy),
                     "area": area,
+                    "class_id": classes[i] if classes is not None else None,
                 }
             )
 

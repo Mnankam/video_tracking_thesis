@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional
 import cv2
 import yaml
 
-from src.deflicker import Deflicker
-from src.segmentation import SimpleSegmenter, Detectron2Segmenter
+from src.deflicker import FFTDeflicker
+from src.segmentation import PipeSegmenterCV, BedSegmenterCV, Detectron2Segmenter
 from src.bed_edge import BedEdgeDetector
 from src.tracking import KalmanTracker
 from src.evaluation import (
@@ -38,7 +38,7 @@ class PipelineConfig:
     save_debug_frames: bool = False
     debug_dir: str = "outputs/debug"
 
-    segmentation_mode: str = "simple"
+    segmentation_mode: str = "pipe_cv"
     detectron2_config_file: Optional[str] = None
     detectron2_weights_file: Optional[str] = None
     detectron2_score_threshold: float = 0.5
@@ -49,6 +49,20 @@ class PipelineConfig:
 
     bed_edge_roi: Optional[list[int]] = None
 
+    # ROI für klassische Segmentierung
+    pipe_roi: Optional[list[int]] = None
+    bed_roi: Optional[list[int]] = None
+
+    # FFT-Deflicker Konfiguration
+    deflicker_fps: float = 200.0
+    deflicker_freq: float = 50.0
+    deflicker_use_second_harmonic: bool = False
+    deflicker_window_size: int = 256
+    deflicker_min_history: int = 32
+    deflicker_smooth_alpha: float = 0.2
+    deflicker_use_median: bool = True
+    deflicker_roi: Optional[list[int]] = None
+
 
 class VideoPipeline:
     def __init__(self, config: PipelineConfig) -> None:
@@ -56,8 +70,24 @@ class VideoPipeline:
         self.evaluator = Evaluator()
         self.tracking_stats = TrackingStats()
 
-        self.deflicker = Deflicker() if config.enable_deflicker else None
+        # FFT-Deflicker
+        self.deflicker = None
+        if config.enable_deflicker:
+            deflicker_roi_tuple = (
+                tuple(config.deflicker_roi) if config.deflicker_roi else None
+            )
+            self.deflicker = FFTDeflicker(
+                fps=config.deflicker_fps,
+                flicker_freq=config.deflicker_freq,
+                use_second_harmonic=config.deflicker_use_second_harmonic,
+                window_size=config.deflicker_window_size,
+                min_history=config.deflicker_min_history,
+                smooth_alpha=config.deflicker_smooth_alpha,
+                use_median=config.deflicker_use_median,
+                roi=deflicker_roi_tuple,
+            )
 
+        # Segmentierung
         if config.segmentation_mode == "detectron2":
             if not config.detectron2_config_file:
                 raise ValueError(
@@ -74,16 +104,29 @@ class VideoPipeline:
                 score_threshold=config.detectron2_score_threshold,
                 device=config.device,
             )
-        else:
-            self.segmenter = SimpleSegmenter()
 
+        elif config.segmentation_mode == "pipe_cv":
+            pipe_roi_tuple = tuple(config.pipe_roi) if config.pipe_roi else None
+            self.segmenter = PipeSegmenterCV(roi=pipe_roi_tuple)
+
+        elif config.segmentation_mode == "bed_cv":
+            bed_roi_tuple = tuple(config.bed_roi) if config.bed_roi else None
+            self.segmenter = BedSegmenterCV(roi=bed_roi_tuple)
+
+        else:
+            raise ValueError(
+                f"Unbekannter segmentation_mode: {config.segmentation_mode}. "
+                f"Erwartet: 'pipe_cv', 'bed_cv' oder 'detectron2'."
+            )
+
+        # Tracking
         self.tracker = (
             KalmanTracker(max_distance=60.0, max_missed=5)
             if config.enable_tracking
             else None
         )
 
-        # Bettkantendetektor initialisieren
+        # Bettkante
         self.bed_edge_detector = None
         if config.enable_bed_edge:
             roi_tuple = tuple(config.bed_edge_roi) if config.bed_edge_roi else None
@@ -109,7 +152,9 @@ class VideoPipeline:
             )
         return frame
 
-    def _write_debug_frame(self, frame_idx: int, frame, mask, tracks, bed_edge_y=None) -> None:
+    def _write_debug_frame(
+        self, frame_idx: int, frame, mask, tracks, bed_edge_y=None
+    ) -> None:
         vis = frame.copy()
 
         for track in tracks:
@@ -129,7 +174,6 @@ class VideoPipeline:
                 cv2.LINE_AA,
             )
 
-        # Bettkante einzeichnen
         if bed_edge_y is not None:
             cv2.line(
                 vis,
@@ -209,7 +253,6 @@ class VideoPipeline:
                 if self.deflicker is not None:
                     frame = self.deflicker.apply(frame)
 
-                # Bettkante bestimmen
                 bed_edge_y = None
                 if self.bed_edge_detector is not None:
                     bed_edge_result = self.bed_edge_detector.detect(frame)
@@ -284,6 +327,8 @@ class VideoPipeline:
             "video_fps": video_fps,
             "segmentation_mode": self.config.segmentation_mode,
             "device": self.config.device,
+            "deflicker_enabled": self.config.enable_deflicker,
+            "deflicker_freq": self.config.deflicker_freq,
         }
 
         eval_summary = self.evaluator.summary()
@@ -313,7 +358,7 @@ def load_config(path: str) -> PipelineConfig:
         enable_bed_edge=data.get("enable_bed_edge", True),
         save_debug_frames=data.get("save_debug_frames", False),
         debug_dir=data.get("debug_dir", "outputs/debug"),
-        segmentation_mode=data.get("segmentation_mode", "simple"),
+        segmentation_mode=data.get("segmentation_mode", "pipe_cv"),
         detectron2_config_file=data.get("detectron2_config_file"),
         detectron2_weights_file=data.get("detectron2_weights_file"),
         detectron2_score_threshold=data.get("detectron2_score_threshold", 0.5),
@@ -321,6 +366,16 @@ def load_config(path: str) -> PipelineConfig:
         save_summary=data.get("save_summary", True),
         summary_csv=data.get("summary_csv", "outputs/summary.csv"),
         bed_edge_roi=data.get("bed_edge_roi"),
+        pipe_roi=data.get("pipe_roi"),
+        bed_roi=data.get("bed_roi"),
+        deflicker_fps=data.get("deflicker_fps", 200.0),
+        deflicker_freq=data.get("deflicker_freq", 50.0),
+        deflicker_use_second_harmonic=data.get("deflicker_use_second_harmonic", False),
+        deflicker_window_size=data.get("deflicker_window_size", 256),
+        deflicker_min_history=data.get("deflicker_min_history", 32),
+        deflicker_smooth_alpha=data.get("deflicker_smooth_alpha", 0.2),
+        deflicker_use_median=data.get("deflicker_use_median", True),
+        deflicker_roi=data.get("deflicker_roi"),
     )
 
 
