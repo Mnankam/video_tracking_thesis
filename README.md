@@ -38,7 +38,7 @@ video-tracking-thesis/
 │
 ├── src/
 │ ├── deflicker.py # FFT-based deflicker (50 Hz flicker removal)
-│ ├── segmentation.py # Pipe and bed segmentation (CV + optional DL)
+│ ├── segmentation.py # Pipe and bed segmentation (CV + DL)
 │ ├── tracking.py # Kalman-based multi-object tracking
 │ ├── bed_edge.py # Bed edge detection
 │ ├── pipeline.py # Main processing pipeline
