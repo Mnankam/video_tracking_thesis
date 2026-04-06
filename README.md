@@ -1,13 +1,3 @@
-# Design and Evaluation of a Scalable GPU-Accelerated Pipeline  
-## for Automated Segmentation and Position Tracking in High-Speed Flow Loop Videos
-
-
----
-
-## Overview
-
-This repository contains the implementation of a scalable, GPU-accelerated video processing pipeline developed as part of a Master's thesis.
-
 The objective is the automated segmentation and position tracking of pipe structures and particle beds in high-speed flow loop experiments (~100,000 frames at 200 FPS).
 
 Due to illumination flickering (50 Hz lab power supply) and the large data volume, manual analysis is infeasible. This project provides a fully automated and reproducible processing framework deployable on HPC infrastructure (GWDG SCC).
@@ -17,8 +7,9 @@ Due to illumination flickering (50 Hz lab power supply) and the large data volum
 ## Objectives
 
 - Automated illumination correction (deflickering)
-- Robust object segmentation (classical CV and/or deep learning)
+- Robust object segmentation (classical CV and deep learning)
 - Multi-frame object tracking
+- Bed edge estimation
 - Scalable batch processing using Slurm job arrays
 - GPU acceleration for segmentation models
 - Quantitative evaluation of segmentation and tracking performance
@@ -77,7 +68,7 @@ The processing workflow consists of:
 2. Illumination normalization (deflickering)
 3. Object segmentation
    - Classical OpenCV-based methods
-   - Optional deep learning models (e.g., Detectron2)
+   - Deep learning models (e.g., Detectron2)
 4. Multi-frame tracking
 5. Result export and visualization
 
