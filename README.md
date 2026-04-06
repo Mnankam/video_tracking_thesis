@@ -1,6 +1,42 @@
 # Design and Evaluation of a Scalable GPU-Accelerated Pipeline  
 ## for Automated Segmentation and Position Tracking in High-Speed Flow Loop Videos
 
+video-tracking-thesis/
+│
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── .gitlab-ci.yml
+│
+├── src/
+│ ├── deflicker.py # FFT-based deflicker (50 Hz flicker removal)
+│ ├── segmentation.py # Pipe and bed segmentation (CV + optional DL)
+│ ├── tracking.py # Kalman-based multi-object tracking
+│ ├── bed_edge.py # Bed edge detection
+│ ├── pipeline.py # Main processing pipeline
+│ └── evaluation.py # Performance evaluation and statistics
+│
+├── configs/
+│ └── config.yaml # Pipeline configuration (ROIs, deflicker, etc.)
+│
+├── scripts/
+│ ├── run_chunk.py # Chunk-based processing for large videos
+│ └── submit_array.sh # SLURM job submission (HPC execution)
+│
+├── apptainer/
+│ └── detectron2.def # Container definition for GPU/HPC usage
+│
+├── outputs/ # Generated results (ignored in Git)
+│ ├── results.csv
+│ ├── summary.csv
+│ ├── debug/
+│ └── overlay_video.mp4
+│
+├── tests/
+│ └── test_pipeline.py
+│
+└── docs/
+└── notes.md
 ---
 
 ## Overview
