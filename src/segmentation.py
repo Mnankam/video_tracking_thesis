@@ -6,15 +6,38 @@ import cv2
 import numpy as np
 
 
+# =========================================================
+# >>> NEU: Farbmodus-Funktion
+# =========================================================
+def convert_color(frame: np.ndarray, mode: str) -> np.ndarray:
+    if mode == "gray":
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    elif mode == "r":
+        return frame[:, :, 2]
+
+    elif mode == "g":
+        return frame[:, :, 1]
+
+    elif mode == "b":
+        return frame[:, :, 0]
+
+    elif mode == "hsv_v":
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        return hsv[:, :, 2]
+
+    elif mode == "hsv_s":
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        return hsv[:, :, 1]
+
+    else:
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+# =========================================================
+# PIPE SEGMENTER
+# =========================================================
 class PipeSegmenterCV:
-    """
-    Klassische Segmentierung zur Bestimmung der Innenrohrposition.
-
-    Ziel:
-    - dominante Rohrstruktur im Bild lokalisieren
-    - Bounding Box und Zentrum ableiten
-
-    """
 
     def __init__(
         self,
@@ -23,12 +46,14 @@ class PipeSegmenterCV:
         use_morphology: bool = True,
         morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
+        color_mode: str = "gray",   # <<< NEU
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
         self.use_morphology = use_morphology
         self.morphology_kernel_size = morphology_kernel_size
         self.roi = roi
+        self.color_mode = color_mode   # <<< NEU
 
     def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
         if self.roi is None:
@@ -51,7 +76,8 @@ class PipeSegmenterCV:
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         roi_frame, x_offset, y_offset = self._extract_roi(frame)
 
-        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
+        # >>> NEU: Farbmodus statt nur grayscale
+        gray = convert_color(roi_frame, self.color_mode)
         gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
         _, mask = cv2.threshold(
@@ -92,14 +118,10 @@ class PipeSegmenterCV:
         return full_mask, detections
 
 
+# =========================================================
+# BED SEGMENTER
+# =========================================================
 class BedSegmenterCV:
-    """
-    Klassische Segmentierung für das Partikelbett.
-
-    Ziel:
-    - Bettbereich isolieren
-    - optionale Ableitung von Bettgrenzen oder Bettregionen
-    """
 
     def __init__(
         self,
@@ -108,12 +130,14 @@ class BedSegmenterCV:
         use_morphology: bool = True,
         morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
+        color_mode: str = "gray",   # <<< NEU
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
         self.use_morphology = use_morphology
         self.morphology_kernel_size = morphology_kernel_size
         self.roi = roi
+        self.color_mode = color_mode   # <<< NEU
 
     def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
         if self.roi is None:
@@ -136,7 +160,8 @@ class BedSegmenterCV:
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         roi_frame, x_offset, y_offset = self._extract_roi(frame)
 
-        gray = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
+        # >>> NEU: Farbmodus
+        gray = convert_color(roi_frame, self.color_mode)
         gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
         _, mask = cv2.threshold(
@@ -177,12 +202,10 @@ class BedSegmenterCV:
         return full_mask, detections
 
 
+# =========================================================
+# DETECTRON2 
+# =========================================================
 class Detectron2Segmenter:
-    """
-    Detectron2-basierte Instanzsegmentierung.
-    Erwartet funktionierende Detectron2-Installation im HPC/Container hier wird Podman verwendet.
-    """
-
     def __init__(
         self,
         config_file: str,
@@ -202,43 +225,32 @@ class Detectron2Segmenter:
 
         self.predictor = DefaultPredictor(cfg)
 
-    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def segment(self, frame: np.ndarray):
         outputs = self.predictor(frame)
         instances = outputs["instances"].to("cpu")
 
         height, width = frame.shape[:2]
         full_mask = np.zeros((height, width), dtype=np.uint8)
-        detections: List[Dict[str, Any]] = []
+        detections = []
 
         if not instances.has("pred_boxes"):
             return full_mask, detections
 
         boxes = instances.pred_boxes.tensor.numpy()
         masks = instances.pred_masks.numpy() if instances.has("pred_masks") else None
-        classes = (
-            instances.pred_classes.numpy().tolist()
-            if instances.has("pred_classes")
-            else None
-        )
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.astype(int)
             w = x2 - x1
             h = y2 - y1
-            cx = x1 + w / 2.0
-            cy = y1 + h / 2.0
-            area = float(w * h)
 
             if masks is not None:
                 full_mask[masks[i]] = 255
 
-            detections.append(
-                {
-                    "bbox": (x1, y1, w, h),
-                    "center": (cx, cy),
-                    "area": area,
-                    "class_id": classes[i] if classes is not None else None,
-                }
-            )
+            detections.append({
+                "bbox": (x1, y1, w, h),
+                "center": (x1 + w / 2, y1 + h / 2),
+                "area": float(w * h),
+            })
 
         return full_mask, detections

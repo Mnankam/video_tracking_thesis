@@ -20,7 +20,7 @@ def load_results(csv_path: str) -> pd.DataFrame:
 
 
 # =========================================================
-# PLOTS
+# STANDARD PLOTS
 # =========================================================
 def plot_tracks_per_frame(df: pd.DataFrame, output_dir: str) -> bool:
     if "track_id" not in df.columns or "frame" not in df.columns:
@@ -106,6 +106,98 @@ def plot_bed_edge(df: pd.DataFrame, output_dir: str) -> bool:
 
 
 # =========================================================
+# COLOR EXPERIMENT PLOTS
+# =========================================================
+def plot_color_metric(
+    df: pd.DataFrame,
+    metric: str,
+    title: str,
+    ylabel: str,
+    output_path: str,
+) -> bool:
+    if metric not in df.columns or "color_mode" not in df.columns:
+        print(f"{metric} fehlt -> übersprungen")
+        return False
+
+    values = pd.to_numeric(df[metric], errors="coerce")
+    valid_df = df.copy()
+    valid_df[metric] = values
+    valid_df = valid_df.dropna(subset=[metric])
+
+    if valid_df.empty:
+        print(f"{metric} hat keine gültigen Werte")
+        return False
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(valid_df["color_mode"], valid_df[metric])
+    plt.title(title)
+    plt.xlabel("Color Mode")
+    plt.ylabel(ylabel)
+    plt.grid(True, axis="y")
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+    return True
+
+
+def plot_color_experiment(output_dir: str) -> List[str]:
+    saved_files: List[str] = []
+
+    input_csv = os.path.join(output_dir, "color_mode_comparison.csv")
+    if not os.path.exists(input_csv):
+        print("Kein Farbexperiment gefunden.")
+        return saved_files
+
+    df = pd.read_csv(input_csv)
+
+    plots_dir = os.path.join(output_dir, "color_plots")
+    os.makedirs(plots_dir, exist_ok=True)
+
+    files = [
+        (
+            "mean_temporal_iou",
+            "Temporal IoU",
+            "IoU",
+            os.path.join(plots_dir, "temporal_iou.png"),
+        ),
+        (
+            "average_track_length",
+            "Track Length",
+            "Frames",
+            os.path.join(plots_dir, "track_length.png"),
+        ),
+        (
+            "num_large_jumps",
+            "Large Jumps",
+            "Count",
+            os.path.join(plots_dir, "jumps.png"),
+        ),
+        (
+            "std_bed_edge_y",
+            "Bed Edge Std",
+            "Pixel",
+            os.path.join(plots_dir, "bed_edge_std.png"),
+        ),
+        (
+            "avg_pipeline_fps",
+            "FPS",
+            "Frames/s",
+            os.path.join(plots_dir, "fps.png"),
+        ),
+    ]
+
+    for metric, title, ylabel, path in files:
+        if plot_color_metric(df, metric, title, ylabel, path):
+            saved_files.append(path)
+
+    if saved_files:
+        print("Color experiment plots gespeichert in:", plots_dir)
+
+    return saved_files
+
+
+# =========================================================
 # VIDEO OVERLAY
 # =========================================================
 def build_frame_lookup(df: pd.DataFrame) -> Dict[int, pd.DataFrame]:
@@ -119,7 +211,6 @@ def render_overlay_video(
     config: dict,
     max_traj_length: int = 100,
 ) -> bool:
-
     required_cols = {"frame", "track_id", "center_x", "center_y"}
     if not required_cols.issubset(df.columns):
         print("Fehlende Spalten für Overlay.")
@@ -130,7 +221,6 @@ def render_overlay_video(
         print("Video konnte nicht geöffnet werden.")
         return False
 
-    # Resize berücksichtigen
     if "resize_width" in config and "resize_height" in config:
         width = config["resize_width"]
         height = config["resize_height"]
@@ -157,9 +247,8 @@ def render_overlay_video(
         if not ok:
             break
 
-        # >>> WICHTIG: Resize wie Pipeline
         if "resize_width" in config and "resize_height" in config:
-            frame = cv2.resize(frame, (width, height))
+            frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
 
         if frame_idx in frame_lookup:
             rows = frame_lookup[frame_idx]
@@ -170,6 +259,16 @@ def render_overlay_video(
                 if not vals.empty:
                     y = int(vals.mean())
                     cv2.line(frame, (0, y), (width - 1, y), (255, 0, 0), 2)
+                    cv2.putText(
+                        frame,
+                        f"bed_edge_y={y}",
+                        (10, max(25, y - 10)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 0, 0),
+                        2,
+                        cv2.LINE_AA,
+                    )
 
             for _, row in rows.iterrows():
                 if int(row["track_id"]) == -1:
@@ -178,19 +277,31 @@ def render_overlay_video(
                 try:
                     cx = int(float(row["center_x"]))
                     cy = int(float(row["center_y"]))
-                except:
+                except Exception:
                     continue
 
                 track_id = int(row["track_id"])
 
-                # Trajektorie speichern
+                x = row.get("x", None)
+                y = row.get("y", None)
+                w = row.get("w", None)
+                h = row.get("h", None)
+
                 if track_id not in trajectories:
                     trajectories[track_id] = []
 
                 trajectories[track_id].append((cx, cy))
                 trajectories[track_id] = trajectories[track_id][-max_traj_length:]
 
-                # Punkt
+                # Bounding Box, wenn vorhanden
+                if pd.notna(x) and pd.notna(y) and pd.notna(w) and pd.notna(h):
+                    x = int(float(x))
+                    y = int(float(y))
+                    w = int(float(w))
+                    h = int(float(h))
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+                # Mittelpunkt
                 cv2.circle(frame, (cx, cy), 4, (0, 0, 255), -1)
 
                 # ID
@@ -202,9 +313,10 @@ def render_overlay_video(
                     0.5,
                     (255, 255, 255),
                     1,
+                    cv2.LINE_AA,
                 )
 
-                # Trajektorie zeichnen
+                # Trajektorie
                 traj = trajectories[track_id]
                 for i in range(1, len(traj)):
                     cv2.line(frame, traj[i - 1], traj[i], (0, 255, 255), 2)
@@ -220,31 +332,40 @@ def render_overlay_video(
 # =========================================================
 # MAIN
 # =========================================================
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True)
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Visualize pipeline results")
+    parser.add_argument("--config", required=True, help="Pfad zur config.yaml")
     args = parser.parse_args()
 
     config = load_config(args.config)
 
-    df = load_results(config["output_csv"])
-    output_dir = os.path.dirname(config["output_csv"]) or "outputs"
+    results_csv = config["output_csv"]
+    output_dir = os.path.dirname(results_csv) or "outputs"
     os.makedirs(output_dir, exist_ok=True)
 
-    results = []
+    df = load_results(results_csv)
+
+    if df.empty:
+        print("Keine Daten in results.csv gefunden.")
+        return
+
+    results: List[str] = []
 
     if plot_tracks_per_frame(df, output_dir):
-        results.append("tracks_per_frame.png")
+        results.append(os.path.join(output_dir, "tracks_per_frame.png"))
 
     if plot_trajectories(df, output_dir):
-        results.append("trajectories.png")
+        results.append(os.path.join(output_dir, "trajectories.png"))
 
     if plot_bed_edge(df, output_dir):
-        results.append("bed_edge_y.png")
+        results.append(os.path.join(output_dir, "bed_edge_y.png"))
 
     video_out = os.path.join(output_dir, "overlay_video.mp4")
     if render_overlay_video(config["video_path"], df, video_out, config):
-        results.append("overlay_video.mp4")
+        results.append(video_out)
+
+    # Farbvergleichsplots
+    results.extend(plot_color_experiment(output_dir))
 
     if results:
         print("Erzeugt:")
