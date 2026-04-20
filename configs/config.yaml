@@ -2,7 +2,7 @@ video_path: data/video.MP4
 output_csv: outputs/results.csv
 
 start_frame: 0
-end_frame: 100
+end_frame: 1000
 
 resize_width: 960
 resize_height: 540
@@ -14,8 +14,8 @@ enable_bed_edge: true
 save_debug_frames: true
 debug_dir: outputs/debug
 
-segmentation_mode: pipe_cv
-segmentation_color_mode: gray
+segmentation_mode: bed_cv
+segmentation_color_mode: hsv_v
 device: cpu
 
 pipe_roi: [100, 50, 700, 400]

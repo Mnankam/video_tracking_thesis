@@ -144,14 +144,16 @@ def plot_color_metric(
 def plot_color_experiment(output_dir: str) -> List[str]:
     saved_files: List[str] = []
 
-    input_csv = os.path.join(output_dir, "color_mode_comparison.csv")
+    experiment_dir = os.path.join(output_dir, "color_experiment")
+    input_csv = os.path.join(experiment_dir, "color_mode_comparison.csv")
+
     if not os.path.exists(input_csv):
         print("Kein Farbexperiment gefunden.")
         return saved_files
 
     df = pd.read_csv(input_csv)
 
-    plots_dir = os.path.join(output_dir, "color_plots")
+    plots_dir = os.path.join(experiment_dir, "color_plots")
     os.makedirs(plots_dir, exist_ok=True)
 
     files = [
@@ -221,6 +223,16 @@ def render_overlay_video(
         print("Video konnte nicht geöffnet werden.")
         return False
 
+    start_frame = int(config.get("start_frame", 0))
+    end_frame = config.get("end_frame", None)
+
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if end_frame is None:
+        end_frame = total_frames
+    end_frame = min(int(end_frame), total_frames)
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
     if "resize_width" in config and "resize_height" in config:
         width = config["resize_width"]
         height = config["resize_height"]
@@ -240,9 +252,9 @@ def render_overlay_video(
     frame_lookup = build_frame_lookup(df)
     trajectories: Dict[int, List[Tuple[int, int]]] = {}
 
-    frame_idx = 0
+    frame_idx = start_frame
 
-    while True:
+    while frame_idx < end_frame:
         ok, frame = cap.read()
         if not ok:
             break
@@ -253,7 +265,6 @@ def render_overlay_video(
         if frame_idx in frame_lookup:
             rows = frame_lookup[frame_idx]
 
-            # Bettkante
             if "bed_edge_y" in rows.columns:
                 vals = pd.to_numeric(rows["bed_edge_y"], errors="coerce").dropna()
                 if not vals.empty:
@@ -293,7 +304,6 @@ def render_overlay_video(
                 trajectories[track_id].append((cx, cy))
                 trajectories[track_id] = trajectories[track_id][-max_traj_length:]
 
-                # Bounding Box, wenn vorhanden
                 if pd.notna(x) and pd.notna(y) and pd.notna(w) and pd.notna(h):
                     x = int(float(x))
                     y = int(float(y))
@@ -301,10 +311,8 @@ def render_overlay_video(
                     h = int(float(h))
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-                # Mittelpunkt
                 cv2.circle(frame, (cx, cy), 4, (0, 0, 255), -1)
 
-                # ID
                 cv2.putText(
                     frame,
                     f"id={track_id}",
@@ -316,10 +324,20 @@ def render_overlay_video(
                     cv2.LINE_AA,
                 )
 
-                # Trajektorie
                 traj = trajectories[track_id]
                 for i in range(1, len(traj)):
                     cv2.line(frame, traj[i - 1], traj[i], (0, 255, 255), 2)
+
+        cv2.putText(
+            frame,
+            f"frame={frame_idx}",
+            (10, height - 15),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
 
         writer.write(frame)
         frame_idx += 1
@@ -327,7 +345,6 @@ def render_overlay_video(
     cap.release()
     writer.release()
     return True
-
 
 # =========================================================
 # MAIN
