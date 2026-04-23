@@ -1,8 +1,9 @@
-video_path: data/video.MP4
-output_csv: outputs/results.csv
+
+video_path: /user/s.kouomnankam/u26502/scratch/data/video_side/GX010044.MP4
+output_csv: /user/s.kouomnankam/u26502/scratch/outputs/results.csv
 
 start_frame: 0
-end_frame: 1000
+end_frame: 100000
 
 resize_width: 960
 resize_height: 540
@@ -12,7 +13,8 @@ enable_tracking: true
 enable_bed_edge: true
 
 save_debug_frames: true
-debug_dir: outputs/debug
+debug_dir: /user/s.kouomnankam/u26502/scratch/outputs/debug
+
 
 segmentation_mode: bed_cv
 segmentation_color_mode: hsv_v
@@ -23,7 +25,8 @@ bed_roi: [100, 100, 700, 300]
 bed_edge_roi: [100, 100, 700, 300]
 
 save_summary: true
-summary_csv: outputs/summary.csv
+summary_csv: /user/s.kouomnankam/u26502/scratch/outputs/summary.csv
+
 
 deflicker_fps: 200.0
 deflicker_freq: 50.0
@@ -33,3 +36,5 @@ deflicker_min_history: 32
 deflicker_smooth_alpha: 0.2
 deflicker_use_median: true
 deflicker_roi: null
+
+
