@@ -206,6 +206,11 @@ class BedSegmenterCV:
 # DETECTRON2 
 # =========================================================
 class Detectron2Segmenter:
+    """
+    Detectron2-basierte Instanzsegmentierung.
+    hiermit erwarte ich eine  funktionierende Detectron2-Installation im Container/auf HPC.
+    """
+
     def __init__(
         self,
         config_file: str,
@@ -219,38 +224,62 @@ class Detectron2Segmenter:
 
         cfg = get_cfg()
         cfg.merge_from_file(model_zoo.get_config_file(config_file))
-        cfg.MODEL.WEIGHTS = weights_file
+
+        if weights_file == "COCO":
+            cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(config_file)
+        else:
+            cfg.MODEL.WEIGHTS = weights_file
+
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = score_threshold
         cfg.MODEL.DEVICE = device
 
+        self.cfg = cfg
         self.predictor = DefaultPredictor(cfg)
 
-    def segment(self, frame: np.ndarray):
+    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         outputs = self.predictor(frame)
         instances = outputs["instances"].to("cpu")
 
         height, width = frame.shape[:2]
         full_mask = np.zeros((height, width), dtype=np.uint8)
-        detections = []
+        detections: List[Dict[str, Any]] = []
 
         if not instances.has("pred_boxes"):
             return full_mask, detections
 
         boxes = instances.pred_boxes.tensor.numpy()
         masks = instances.pred_masks.numpy() if instances.has("pred_masks") else None
+        classes = (
+            instances.pred_classes.numpy().tolist()
+            if instances.has("pred_classes")
+            else None
+        )
+        scores = (
+            instances.scores.numpy().tolist()
+            if instances.has("scores")
+            else None
+        )
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.astype(int)
             w = x2 - x1
             h = y2 - y1
+            cx = x1 + w / 2.0
+            cy = y1 + h / 2.0
+            area = float(w * h)
 
             if masks is not None:
                 full_mask[masks[i]] = 255
 
-            detections.append({
-                "bbox": (x1, y1, w, h),
-                "center": (x1 + w / 2, y1 + h / 2),
-                "area": float(w * h),
-            })
+            detections.append(
+                {
+                    "bbox": (x1, y1, w, h),
+                    "center": (cx, cy),
+                    "area": area,
+                    "class_id": classes[i] if classes is not None else None,
+                    "score": scores[i] if scores is not None else None,
+                    "label": "detectron2_object",
+                }
+            )
 
         return full_mask, detections
