@@ -1,9 +1,8 @@
-
 video_path: /user/s.kouomnankam/u26502/scratch/data/video_side/GX010044.MP4
-output_csv: /user/s.kouomnankam/u26502/scratch/outputs/results.csv
+output_csv: /user/s.kouomnankam/u26502/scratch/outputs/results_detectron2.csv
 
 start_frame: 0
-end_frame: 100000
+end_frame: 10000
 
 resize_width: 960
 resize_height: 540
@@ -13,20 +12,21 @@ enable_tracking: true
 enable_bed_edge: true
 
 save_debug_frames: true
-debug_dir: /user/s.kouomnankam/u26502/scratch/outputs/debug
+debug_dir: /user/s.kouomnankam/u26502/scratch/outputs/debug_detectron2
 
-
-segmentation_mode: bed_cv
-segmentation_color_mode: hsv_v
+segmentation_mode: detectron2
 device: cpu
+
+detectron2_config_file: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml
+detectron2_weights_file: COCO
+detectron2_score_threshold: 0.5
 
 pipe_roi: [100, 50, 700, 400]
 bed_roi: [100, 100, 700, 300]
 bed_edge_roi: [100, 100, 700, 300]
 
 save_summary: true
-summary_csv: /user/s.kouomnankam/u26502/scratch/outputs/summary.csv
-
+summary_csv: /user/s.kouomnankam/u26502/scratch/outputs/summary_detectron2.csv
 
 deflicker_fps: 200.0
 deflicker_freq: 50.0
