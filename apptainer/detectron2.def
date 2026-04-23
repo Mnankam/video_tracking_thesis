@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: pytorch/pytorch:2.1.2-cuda11.8-cudnn8-runtime
+
+%post
+    apt-get update && apt-get install -y \
+        git \
+        python3-opencv \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender-dev \
+        && rm -rf /var/lib/apt/lists/*
+
+    python -m pip install --upgrade pip
+    python -m pip install \
+        numpy \
+        pandas \
+        matplotlib \
+        pyyaml \
+        scipy \
+        scikit-image \
+        imageio \
+        filterpy \
+        lap \
+        tqdm \
+        rich \
+        loguru \
+        scikit-learn
+
+    python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+
+%environment
+    export LC_ALL=C
+    export LANG=C
+
+%runscript
+    exec python "$@"
+
