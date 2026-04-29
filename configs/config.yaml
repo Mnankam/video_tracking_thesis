@@ -2,7 +2,7 @@ video_path: /scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/da
 output_csv: /scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/results_detectron2.csv
 
 start_frame: 0
-end_frame: 10000
+end_frame: 100000
 
 resize_width: 960
 resize_height: 540
