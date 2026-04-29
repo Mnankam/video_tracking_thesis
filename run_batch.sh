@@ -18,7 +18,7 @@ for video in "$DATA"/*.MP4; do
     CONFIG_OUT="$OUT/configs/config_${name}.yaml"
     RESULTS_OUT="$OUT/${name}_results.csv"
     SUMMARY_OUT="$OUT/${name}_summary.csv"
-    DEBUG_OUT="$OUT/debug_${name"
+    DEBUG_OUT="$OUT/debug_${name}"
 
     echo "======================================"
     echo "Processing: $name"
