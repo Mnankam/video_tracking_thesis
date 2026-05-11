@@ -356,6 +356,11 @@ class BedSegmenterCV:
 # DETECTRON2
 # =========================================================
 class Detectron2Segmenter:
+    """
+    Detectron2-basierte Instanzsegmentierung.
+    hiermit erwarte ich eine  funktionierende Detectron2-Installation im Container/auf HPC.
+    """
+
     def __init__(
         self,
         config_file: str,
@@ -378,6 +383,7 @@ class Detectron2Segmenter:
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = score_threshold
         cfg.MODEL.DEVICE = device
 
+        self.cfg = cfg
         self.predictor = DefaultPredictor(cfg)
 
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
@@ -393,25 +399,50 @@ class Detectron2Segmenter:
 
         boxes = instances.pred_boxes.tensor.numpy()
         masks = instances.pred_masks.numpy() if instances.has("pred_masks") else None
+<<<<<<< HEAD
         classes = instances.pred_classes.numpy() if instances.has("pred_classes") else None
         scores = instances.scores.numpy() if instances.has("scores") else None
+=======
+        classes = (
+            instances.pred_classes.numpy().tolist()
+            if instances.has("pred_classes")
+            else None
+        )
+        scores = (
+            instances.scores.numpy().tolist()
+            if instances.has("scores")
+            else None
+        )
+>>>>>>> dd6e42e320897d5f2fc892fb549832df88ef6776
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.astype(int)
             w = x2 - x1
             h = y2 - y1
+            cx = x1 + w / 2.0
+            cy = y1 + h / 2.0
+            area = float(w * h)
 
             if masks is not None:
                 full_mask[masks[i]] = 255
 
             detections.append(
                 {
+<<<<<<< HEAD
                     "bbox": (int(x1), int(y1), int(w), int(h)),
                     "center": (float(x1 + w / 2.0), float(y1 + h / 2.0)),
                     "area": float(w * h),
                     "label": "detectron2_object",
                     "class_id": int(classes[i]) if classes is not None else None,
                     "score": float(scores[i]) if scores is not None else None,
+=======
+                    "bbox": (x1, y1, w, h),
+                    "center": (cx, cy),
+                    "area": area,
+                    "class_id": classes[i] if classes is not None else None,
+                    "score": scores[i] if scores is not None else None,
+                    "label": "detectron2_object",
+>>>>>>> dd6e42e320897d5f2fc892fb549832df88ef6776
                 }
             )
 

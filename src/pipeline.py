@@ -152,8 +152,12 @@ class VideoPipeline:
         if config.enable_tracking:
             if config.segmentation_mode == "pipe_cv":
                 self.tracker = SingleObjectTracker()
-            else:
+
+            elif config.segmentation_mode in ["detectron2", "yolo"]:
                 self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
+
+            else:
+                raise ValueError(f"Unsupported segmentation_mode: {config.segmentation_mode}")
         else:
             self.tracker = None
 
