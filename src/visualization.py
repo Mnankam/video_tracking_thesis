@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
@@ -17,6 +17,41 @@ def load_config(config_path: str) -> dict:
 
 def load_results(csv_path: str) -> pd.DataFrame:
     return pd.read_csv(csv_path)
+
+
+# =========================================================
+# HILFSFUNKTIONEN
+# =========================================================
+def draw_roi(frame, roi, color, label: str) -> None:
+    if roi is None:
+        return
+
+    try:
+        x, y, w, h = map(int, roi)
+    except Exception:
+        return
+
+    cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+    cv2.putText(
+        frame,
+        label,
+        (x, max(20, y - 5)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        color,
+        1,
+        cv2.LINE_AA,
+    )
+
+
+def get_bed_edge_column(df: pd.DataFrame) -> Optional[str]:
+    if "bed_edge_y_smooth" in df.columns:
+        return "bed_edge_y_smooth"
+    if "bed_edge_y_raw" in df.columns:
+        return "bed_edge_y_raw"
+    if "bed_edge_y" in df.columns:
+        return "bed_edge_y"
+    return None
 
 
 # =========================================================
@@ -78,28 +113,104 @@ def plot_trajectories(df: pd.DataFrame, output_dir: str, max_tracks: int = 10) -
 
 
 def plot_bed_edge(df: pd.DataFrame, output_dir: str) -> bool:
-    if "bed_edge_y" not in df.columns:
+    bed_col = get_bed_edge_column(df)
+    if bed_col is None:
         return False
 
-    bed_df = df[["frame", "bed_edge_y"]].copy()
-    bed_df["bed_edge_y"] = pd.to_numeric(bed_df["bed_edge_y"], errors="coerce")
+    bed_df = df[["frame", bed_col]].copy()
+    bed_df[bed_col] = pd.to_numeric(bed_df[bed_col], errors="coerce")
     bed_df = bed_df.dropna()
 
     if bed_df.empty:
         return False
 
-    bed_df = bed_df.groupby("frame", as_index=False)["bed_edge_y"].mean()
+    bed_df = bed_df.groupby("frame", as_index=False)[bed_col].mean()
 
     plt.figure(figsize=(10, 5))
-    plt.plot(bed_df["frame"], bed_df["bed_edge_y"])
+    plt.plot(bed_df["frame"], bed_df[bed_col])
     plt.xlabel("Frame")
     plt.ylabel("Bettkante y")
-    plt.title("Bettkante über Zeit")
+    plt.title(f"Bettkante über Zeit ({bed_col})")
     plt.gca().invert_yaxis()
     plt.grid(True)
     plt.tight_layout()
 
     out_path = os.path.join(output_dir, "bed_edge_y.png")
+    plt.savefig(out_path)
+    plt.close()
+    return True
+
+
+def plot_bed_edge_raw_vs_smooth(df: pd.DataFrame, output_dir: str) -> bool:
+    if "bed_edge_y_raw" not in df.columns or "bed_edge_y_smooth" not in df.columns:
+        return False
+
+    bed_df = df[["frame", "bed_edge_y_raw", "bed_edge_y_smooth"]].copy()
+    bed_df["bed_edge_y_raw"] = pd.to_numeric(
+        bed_df["bed_edge_y_raw"], errors="coerce"
+    )
+    bed_df["bed_edge_y_smooth"] = pd.to_numeric(
+        bed_df["bed_edge_y_smooth"], errors="coerce"
+    )
+
+    bed_df = bed_df.dropna(subset=["bed_edge_y_raw", "bed_edge_y_smooth"])
+
+    if bed_df.empty:
+        return False
+
+    bed_df = bed_df.groupby("frame", as_index=False)[
+        ["bed_edge_y_raw", "bed_edge_y_smooth"]
+    ].mean()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(bed_df["frame"], bed_df["bed_edge_y_raw"], label="raw")
+    plt.plot(bed_df["frame"], bed_df["bed_edge_y_smooth"], label="smooth")
+    plt.xlabel("Frame")
+    plt.ylabel("Bettkante y")
+    plt.title("Bettkante: roh vs. geglättet")
+    plt.gca().invert_yaxis()
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    out_path = os.path.join(output_dir, "bed_edge_raw_vs_smooth.png")
+    plt.savefig(out_path)
+    plt.close()
+    return True
+
+
+def plot_inner_pipe_center(df: pd.DataFrame, output_dir: str) -> bool:
+    required_cols = {"frame", "inner_pipe_center_x", "inner_pipe_center_y"}
+    if not required_cols.issubset(df.columns):
+        return False
+
+    ip_df = df[["frame", "inner_pipe_center_x", "inner_pipe_center_y"]].copy()
+    ip_df["inner_pipe_center_x"] = pd.to_numeric(
+        ip_df["inner_pipe_center_x"], errors="coerce"
+    )
+    ip_df["inner_pipe_center_y"] = pd.to_numeric(
+        ip_df["inner_pipe_center_y"], errors="coerce"
+    )
+    ip_df = ip_df.dropna()
+
+    if ip_df.empty:
+        return False
+
+    ip_df = ip_df.groupby("frame", as_index=False)[
+        ["inner_pipe_center_x", "inner_pipe_center_y"]
+    ].mean()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(ip_df["frame"], ip_df["inner_pipe_center_x"], label="inner_pipe_center_x")
+    plt.plot(ip_df["frame"], ip_df["inner_pipe_center_y"], label="inner_pipe_center_y")
+    plt.xlabel("Frame")
+    plt.ylabel("Position [px]")
+    plt.title("Inneres Rohr: Mittelpunkt über Zeit")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    out_path = os.path.join(output_dir, "inner_pipe_center.png")
     plt.savefig(out_path)
     plt.close()
     return True
@@ -206,6 +317,89 @@ def build_frame_lookup(df: pd.DataFrame) -> Dict[int, pd.DataFrame]:
     return {int(k): v for k, v in df.groupby("frame")}
 
 
+def draw_bed_edge_overlay(frame, rows: pd.DataFrame, width: int) -> None:
+    bed_col = get_bed_edge_column(rows)
+    if bed_col is None:
+        return
+
+    vals = pd.to_numeric(rows[bed_col], errors="coerce").dropna()
+    if vals.empty:
+        return
+
+    y = int(vals.mean())
+
+    cv2.line(frame, (0, y), (width - 1, y), (255, 0, 0), 2)
+    cv2.putText(
+        frame,
+        f"{bed_col}={y}",
+        (10, max(25, y - 10)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (255, 0, 0),
+        2,
+        cv2.LINE_AA,
+    )
+
+    if "bed_edge_y_raw" in rows.columns and "bed_edge_y_smooth" in rows.columns:
+        raw_vals = pd.to_numeric(rows["bed_edge_y_raw"], errors="coerce").dropna()
+        if not raw_vals.empty:
+            y_raw = int(raw_vals.mean())
+            cv2.line(frame, (0, y_raw), (width - 1, y_raw), (0, 0, 255), 1)
+            cv2.putText(
+                frame,
+                f"raw={y_raw}",
+                (10, max(45, y_raw + 20)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA,
+            )
+
+
+def draw_inner_pipe_overlay(frame, rows: pd.DataFrame) -> None:
+    required = {"inner_pipe_x", "inner_pipe_y", "inner_pipe_w", "inner_pipe_h"}
+    if not required.issubset(rows.columns):
+        return
+
+    ip = rows.iloc[0]
+
+    try:
+        ip_x = int(float(ip["inner_pipe_x"]))
+        ip_y = int(float(ip["inner_pipe_y"]))
+        ip_w = int(float(ip["inner_pipe_w"]))
+        ip_h = int(float(ip["inner_pipe_h"]))
+    except Exception:
+        return
+
+    cv2.rectangle(
+        frame,
+        (ip_x, ip_y),
+        (ip_x + ip_w, ip_y + ip_h),
+        (255, 255, 0),
+        2,
+    )
+
+    cv2.putText(
+        frame,
+        "inner_pipe",
+        (ip_x, max(20, ip_y - 8)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (255, 255, 0),
+        2,
+        cv2.LINE_AA,
+    )
+
+    if {"inner_pipe_center_x", "inner_pipe_center_y"}.issubset(rows.columns):
+        try:
+            ip_cx = int(float(ip["inner_pipe_center_x"]))
+            ip_cy = int(float(ip["inner_pipe_center_y"]))
+            cv2.circle(frame, (ip_cx, ip_cy), 5, (255, 255, 0), -1)
+        except Exception:
+            pass
+
+
 def render_overlay_video(
     video_path: str,
     df: pd.DataFrame,
@@ -234,13 +428,15 @@ def render_overlay_video(
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
     if "resize_width" in config and "resize_height" in config:
-        width = config["resize_width"]
-        height = config["resize_height"]
+        width = int(config["resize_width"])
+        height = int(config["resize_height"])
     else:
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0:
+        fps = 25.0
 
     writer = cv2.VideoWriter(
         output_video_path,
@@ -248,6 +444,11 @@ def render_overlay_video(
         fps,
         (width, height),
     )
+
+    if not writer.isOpened():
+        print("Overlay-Video konnte nicht geschrieben werden.")
+        cap.release()
+        return False
 
     frame_lookup = build_frame_lookup(df)
     trajectories: Dict[int, List[Tuple[int, int]]] = {}
@@ -262,27 +463,30 @@ def render_overlay_video(
         if "resize_width" in config and "resize_height" in config:
             frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
 
+        # ROIs immer zeichnen
+        draw_roi(frame, config.get("bed_roi"), (0, 255, 255), "bed_roi")
+        draw_roi(frame, config.get("bed_edge_roi"), (255, 0, 0), "bed_edge_roi")
+        draw_roi(frame, config.get("inner_pipe_roi"), (255, 255, 0), "inner_pipe_roi")
+        draw_roi(frame, config.get("pipe_roi"), (0, 255, 0), "pipe_roi")
+        draw_roi(frame, config.get("optical_box_roi"), (255, 0, 255), "optical_box_roi")
+
         if frame_idx in frame_lookup:
             rows = frame_lookup[frame_idx]
 
-            if "bed_edge_y" in rows.columns:
-                vals = pd.to_numeric(rows["bed_edge_y"], errors="coerce").dropna()
-                if not vals.empty:
-                    y = int(vals.mean())
-                    cv2.line(frame, (0, y), (width - 1, y), (255, 0, 0), 2)
-                    cv2.putText(
-                        frame,
-                        f"bed_edge_y={y}",
-                        (10, max(25, y - 10)),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        (255, 0, 0),
-                        2,
-                        cv2.LINE_AA,
-                    )
+            # Bettkante
+            draw_bed_edge_overlay(frame, rows, width)
 
+            # Inneres Rohr
+            draw_inner_pipe_overlay(frame, rows)
+
+            # Tracks
             for _, row in rows.iterrows():
-                if int(row["track_id"]) == -1:
+                try:
+                    track_id = int(row["track_id"])
+                except Exception:
+                    continue
+
+                if track_id == -1:
                     continue
 
                 try:
@@ -290,8 +494,6 @@ def render_overlay_video(
                     cy = int(float(row["center_y"]))
                 except Exception:
                     continue
-
-                track_id = int(row["track_id"])
 
                 x = row.get("x", None)
                 y = row.get("y", None)
@@ -305,11 +507,20 @@ def render_overlay_video(
                 trajectories[track_id] = trajectories[track_id][-max_traj_length:]
 
                 if pd.notna(x) and pd.notna(y) and pd.notna(w) and pd.notna(h):
-                    x = int(float(x))
-                    y = int(float(y))
-                    w = int(float(w))
-                    h = int(float(h))
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    try:
+                        x = int(float(x))
+                        y = int(float(y))
+                        w = int(float(w))
+                        h = int(float(h))
+                        cv2.rectangle(
+                            frame,
+                            (x, y),
+                            (x + w, y + h),
+                            (0, 255, 0),
+                            2,
+                        )
+                    except Exception:
+                        pass
 
                 cv2.circle(frame, (cx, cy), 4, (0, 0, 255), -1)
 
@@ -346,6 +557,7 @@ def render_overlay_video(
     writer.release()
     return True
 
+
 # =========================================================
 # MAIN
 # =========================================================
@@ -377,11 +589,16 @@ def main() -> None:
     if plot_bed_edge(df, output_dir):
         results.append(os.path.join(output_dir, "bed_edge_y.png"))
 
+    if plot_bed_edge_raw_vs_smooth(df, output_dir):
+        results.append(os.path.join(output_dir, "bed_edge_raw_vs_smooth.png"))
+
+    if plot_inner_pipe_center(df, output_dir):
+        results.append(os.path.join(output_dir, "inner_pipe_center.png"))
+
     video_out = os.path.join(output_dir, "overlay_video.mp4")
     if render_overlay_video(config["video_path"], df, video_out, config):
         results.append(video_out)
 
-    # Farbvergleichsplots
     results.extend(plot_color_experiment(output_dir))
 
     if results:
