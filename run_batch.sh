@@ -4,8 +4,7 @@ set -euo pipefail
 CONTAINER="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
-OUT="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch"
-
+OUT="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_v2"
 mkdir -p "$OUT/logs" "$OUT/configs"
 
 cd "$PROJECT"
