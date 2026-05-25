@@ -1,10 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-CONTAINER="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
+CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
-DATA="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
-OUT="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_v2"
+DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
+OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_cv"
+
 mkdir -p "$OUT/logs" "$OUT/configs"
 
 cd "$PROJECT"
@@ -36,22 +37,36 @@ for video in "$DATA"/*.MP4; do
         echo "Result already exists for $name, skipping pipeline."
     else
         echo "Running pipeline..."
-        apptainer exec \
-            -B /scratch-scc:/scratch-scc \
+
+        if apptainer exec \
+            -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+            -B "$PROJECT":"$PROJECT" \
             "$CONTAINER" \
             python -m src.pipeline --config "$CONFIG_OUT" \
-            > "$OUT/logs/${name}_pipeline.log" 2>&1
+            > "$OUT/logs/${name}_pipeline.log" 2>&1; then
 
-        echo "Pipeline finished: $name"
+            echo "Pipeline finished: $name"
+        else
+            echo "Pipeline failed for $name. Check log:"
+            echo "$OUT/logs/${name}_pipeline.log"
+            continue
+        fi
     fi
 
     echo "Running visualization..."
-    apptainer exec \
-        -B /scratch-scc:/scratch-scc \
+
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
         "$CONTAINER" \
         python -m src.visualization --config "$CONFIG_OUT" \
-        > "$OUT/logs/${name}_visualization.log" 2>&1 || \
-        echo "Visualization failed for $name. Check log."
+        > "$OUT/logs/${name}_visualization.log" 2>&1; then
+
+        echo "Visualization finished: $name"
+    else
+        echo "Visualization failed for $name. Check log:"
+        echo "$OUT/logs/${name}_visualization.log"
+    fi
 
     echo "Done: $name"
 done
