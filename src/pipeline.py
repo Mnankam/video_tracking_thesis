@@ -137,7 +137,7 @@ class VideoPipeline:
                 f"Unbekannter segmentation_mode: {config.segmentation_mode}"
             )
 
-        # Inneres Rohr
+                # Inneres Rohr
         self.inner_pipe_segmenter = None
         if config.enable_inner_pipe:
             inner_pipe_roi_tuple = (
@@ -148,20 +148,20 @@ class VideoPipeline:
                 color_mode="gray",
             )
 
-            # Tracking
-    if config.enable_tracking:
-        if config.segmentation_mode == "pipe_cv":
-            self.tracker = SingleObjectTracker()
+        # Tracking
+        if config.enable_tracking:
+            if config.segmentation_mode == "pipe_cv":
+                self.tracker = SingleObjectTracker()
 
-        elif config.segmentation_mode in ["bed_cv", "detectron2", "yolo"]:
-            self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
+            elif config.segmentation_mode in ["bed_cv", "detectron2", "yolo"]:
+                self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
 
+            else:
+                raise ValueError(
+                    f"Unsupported segmentation_mode: {config.segmentation_mode}"
+                )
         else:
-            raise ValueError(
-                f"Unsupported segmentation_mode: {config.segmentation_mode}"
-            )
-    else:
-        self.tracker = None
+            self.tracker = None
 
         # Bettkante
         self.bed_edge_detector = None
@@ -171,7 +171,6 @@ class VideoPipeline:
                 roi=roi_tuple,
                 color_mode=config.bed_edge_color_mode,
             )
-
         output_dir = os.path.dirname(config.output_csv)
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
