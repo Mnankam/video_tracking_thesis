@@ -7,37 +7,39 @@ import numpy as np
 
 
 # =========================================================
-# Farbmodus-Funktion
+# COLOR CONVERSION
 # =========================================================
 def convert_color(frame: np.ndarray, mode: str) -> np.ndarray:
     if mode == "gray":
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    elif mode == "r":
+    if mode == "r":
         return frame[:, :, 2]
 
-    elif mode == "g":
+    if mode == "g":
         return frame[:, :, 1]
 
-    elif mode == "b":
+    if mode == "b":
         return frame[:, :, 0]
 
-    elif mode == "hsv_v":
+    if mode == "hsv_h":
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        return hsv[:, :, 2]
+        return hsv[:, :, 0]
 
-    elif mode == "hsv_s":
+    if mode == "hsv_s":
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         return hsv[:, :, 1]
 
-    else:
-        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if mode == "hsv_v":
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        return hsv[:, :, 2]
+
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 
 # =========================================================
-# ROI-HILFSFUNKTION
-# Unterstützt:
-#   [x, y, w, h]
+# ROI HELPER
+# ROI format: [x, y, w, h]
 # =========================================================
 def extract_roi(
     frame: np.ndarray,
@@ -47,14 +49,99 @@ def extract_roi(
         return frame, 0, 0
 
     x, y, w, h = map(int, roi)
-    h_img, w_img = frame.shape[:2]
+    img_h, img_w = frame.shape[:2]
 
-    x = max(0, min(x, w_img - 1))
-    y = max(0, min(y, h_img - 1))
-    w = max(1, min(w, w_img - x))
-    h = max(1, min(h, h_img - y))
+    x = max(0, min(x, img_w - 1))
+    y = max(0, min(y, img_h - 1))
+    w = max(1, min(w, img_w - x))
+    h = max(1, min(h, img_h - y))
 
     return frame[y:y + h, x:x + w], x, y
+
+
+def make_full_mask(
+    frame: np.ndarray,
+    roi_mask: np.ndarray,
+    x_offset: int,
+    y_offset: int,
+) -> np.ndarray:
+    full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+    full_mask[
+        y_offset:y_offset + roi_mask.shape[0],
+        x_offset:x_offset + roi_mask.shape[1],
+    ] = roi_mask
+    return full_mask
+
+
+def clean_mask(
+    mask: np.ndarray,
+    kernel_size: int = 5,
+    open_iter: int = 1,
+    close_iter: int = 2,
+) -> np.ndarray:
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+
+    if open_iter > 0:
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=open_iter)
+
+    if close_iter > 0:
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=close_iter)
+
+    return mask
+
+
+def contour_to_detection(
+    contour: np.ndarray,
+    x_offset: int,
+    y_offset: int,
+    label: str,
+) -> Dict[str, Any]:
+    x, y, w, h = cv2.boundingRect(contour)
+
+    x_global = x + x_offset
+    y_global = y + y_offset
+
+    cx = x_global + w / 2.0
+    cy = y_global + h / 2.0
+
+    contour_global = contour.copy()
+    contour_global[:, 0, 0] += x_offset
+    contour_global[:, 0, 1] += y_offset
+
+    return {
+        "bbox": (int(x_global), int(y_global), int(w), int(h)),
+        "center": (float(cx), float(cy)),
+        "area": float(cv2.contourArea(contour)),
+        "label": label,
+        "contour": contour_global,
+    }
+
+
+def filter_contours(
+    contours: List[np.ndarray],
+    min_area: float,
+    min_aspect_ratio: Optional[float] = None,
+    max_aspect_ratio: Optional[float] = None,
+) -> List[np.ndarray]:
+    valid = []
+
+    for contour in contours:
+        area = float(cv2.contourArea(contour))
+        if area < min_area:
+            continue
+
+        x, y, w, h = cv2.boundingRect(contour)
+        aspect_ratio = w / max(h, 1)
+
+        if min_aspect_ratio is not None and aspect_ratio < min_aspect_ratio:
+            continue
+
+        if max_aspect_ratio is not None and aspect_ratio > max_aspect_ratio:
+            continue
+
+        valid.append(contour)
+
+    return valid
 
 
 # =========================================================
@@ -62,35 +149,20 @@ def extract_roi(
 # =========================================================
 class InnerPipeSegmenter:
     """
-    Detektion des inneren Rohrs innerhalb eines ROI.
-
-    ROI-Format:
-        (x, y, w, h)
-
-    Rückgabe:
-        full_mask, detections
-
-    detections:
-        [
-            {
-                "bbox": (x, y, w, h),
-                "center": (cx, cy),
-                "area": area,
-                "label": "inner_pipe",
-                "contour": contour_global,
-            }
-        ]
+    Detects the inner transparent pipe inside inner_pipe_roi.
+    The method focuses on horizontal elongated edge structures.
     """
 
     def __init__(
         self,
-        min_area: float = 100.0,
+        min_area: float = 80.0,
         blur_kernel: Tuple[int, int] = (5, 5),
-        canny_low: int = 50,
-        canny_high: int = 150,
-        morphology_kernel_size: int = 3,
+        canny_low: int = 30,
+        canny_high: int = 120,
+        morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
+        min_aspect_ratio: float = 4.0,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -99,6 +171,7 @@ class InnerPipeSegmenter:
         self.morphology_kernel_size = morphology_kernel_size
         self.roi = roi
         self.color_mode = color_mode
+        self.min_aspect_ratio = min_aspect_ratio
 
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
@@ -110,11 +183,11 @@ class InnerPipeSegmenter:
 
         edges = cv2.Canny(gray, self.canny_low, self.canny_high)
 
-        kernel = np.ones(
-            (self.morphology_kernel_size, self.morphology_kernel_size),
-            np.uint8,
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (self.morphology_kernel_size * 3, self.morphology_kernel_size),
         )
-        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         contours, _ = cv2.findContours(
             edges,
@@ -122,67 +195,21 @@ class InnerPipeSegmenter:
             cv2.CHAIN_APPROX_SIMPLE,
         )
 
-        detections: List[Dict[str, Any]] = []
-        full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-
-        if not contours:
-            full_mask[
-                y_offset:y_offset + edges.shape[0],
-                x_offset:x_offset + edges.shape[1],
-            ] = edges
-            return full_mask, detections
-
-        candidates = []
-        for contour in contours:
-            area = float(cv2.contourArea(contour))
-            if area < self.min_area:
-                continue
-
-            x, y, w, h = cv2.boundingRect(contour)
-
-            # Rohr ist typischerweise eher länglich/horizontal.
-            aspect_ratio = w / max(h, 1)
-
-            if aspect_ratio < 1.5:
-                continue
-
-            candidates.append((area, contour))
-
-        if not candidates:
-            full_mask[
-                y_offset:y_offset + edges.shape[0],
-                x_offset:x_offset + edges.shape[1],
-            ] = edges
-            return full_mask, detections
-
-        _, best_contour = max(candidates, key=lambda item: item[0])
-
-        x, y, w, h = cv2.boundingRect(best_contour)
-
-        x_global = x + x_offset
-        y_global = y + y_offset
-        cx = x_global + w / 2.0
-        cy = y_global + h / 2.0
-
-        contour_global = best_contour.copy()
-        contour_global[:, 0, 0] += x_offset
-        contour_global[:, 0, 1] += y_offset
-
-        full_mask[
-            y_offset:y_offset + edges.shape[0],
-            x_offset:x_offset + edges.shape[1],
-        ] = edges
-
-        detections.append(
-            {
-                "bbox": (int(x_global), int(y_global), int(w), int(h)),
-                "center": (float(cx), float(cy)),
-                "area": float(w * h),
-                "label": "inner_pipe",
-                "contour": contour_global,
-            }
+        contours = filter_contours(
+            contours,
+            min_area=self.min_area,
+            min_aspect_ratio=self.min_aspect_ratio,
         )
 
+        detections: List[Dict[str, Any]] = []
+
+        if contours:
+            best = max(contours, key=cv2.contourArea)
+            detections.append(
+                contour_to_detection(best, x_offset, y_offset, "inner_pipe")
+            )
+
+        full_mask = make_full_mask(frame, edges, x_offset, y_offset)
         return full_mask, detections
 
 
@@ -190,7 +217,6 @@ class InnerPipeSegmenter:
 # PIPE SEGMENTER
 # =========================================================
 class PipeSegmenterCV:
-
     def __init__(
         self,
         min_area: float = 300.0,
@@ -207,65 +233,40 @@ class PipeSegmenterCV:
         self.roi = roi
         self.color_mode = color_mode
 
-    def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
-        return extract_roi(frame, self.roi)
-
-    def _postprocess_mask(self, mask: np.ndarray) -> np.ndarray:
-        if not self.use_morphology:
-            return mask
-
-        kernel = np.ones(
-            (self.morphology_kernel_size, self.morphology_kernel_size),
-            np.uint8,
-        )
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-        return mask
-
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
-        roi_frame, x_offset, y_offset = self._extract_roi(frame)
+        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         gray = convert_color(roi_frame, self.color_mode)
         gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
         _, mask = cv2.threshold(
-            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+            gray,
+            0,
+            255,
+            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
         )
 
-        mask = self._postprocess_mask(mask)
+        if self.use_morphology:
+            mask = clean_mask(mask, self.morphology_kernel_size)
 
         contours, _ = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            mask,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
         )
 
-        detections: List[Dict[str, Any]] = []
-        for contour in contours:
-            area = float(cv2.contourArea(contour))
-            if area < self.min_area:
-                continue
+        contours = filter_contours(
+            contours,
+            min_area=self.min_area,
+            min_aspect_ratio=2.0,
+        )
 
-            x, y, w, h = cv2.boundingRect(contour)
-            x += x_offset
-            y += y_offset
+        detections = [
+            contour_to_detection(c, x_offset, y_offset, "pipe")
+            for c in contours
+        ]
 
-            cx = x + w / 2.0
-            cy = y + h / 2.0
-
-            detections.append(
-                {
-                    "bbox": (int(x), int(y), int(w), int(h)),
-                    "center": (float(cx), float(cy)),
-                    "area": area,
-                    "label": "inner_pipe",
-                }
-            )
-
-        full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-        full_mask[
-            y_offset:y_offset + mask.shape[0],
-            x_offset:x_offset + mask.shape[1],
-        ] = mask
-
+        full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
 
 
@@ -273,15 +274,22 @@ class PipeSegmenterCV:
 # BED SEGMENTER
 # =========================================================
 class BedSegmenterCV:
+    """
+    Detects the particle/fluidized bed region.
+    Uses HSV information when possible, because the bed is usually
+    better separated in saturation/value than in pure grayscale.
+    """
 
     def __init__(
         self,
         min_area: float = 150.0,
         blur_kernel: Tuple[int, int] = (5, 5),
         use_morphology: bool = True,
-        morphology_kernel_size: int = 3,
+        morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
-        color_mode: str = "gray",
+        color_mode: str = "hsv_s",
+        threshold_mode: str = "otsu",
+        invert: bool = False,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -289,66 +297,120 @@ class BedSegmenterCV:
         self.morphology_kernel_size = morphology_kernel_size
         self.roi = roi
         self.color_mode = color_mode
+        self.threshold_mode = threshold_mode
+        self.invert = invert
 
-    def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
-        return extract_roi(frame, self.roi)
+    def _threshold(self, gray: np.ndarray) -> np.ndarray:
+        if self.threshold_mode == "adaptive":
+            mask = cv2.adaptiveThreshold(
+                gray,
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY,
+                31,
+                -3,
+            )
+        else:
+            thresh_type = cv2.THRESH_BINARY_INV if self.invert else cv2.THRESH_BINARY
+            _, mask = cv2.threshold(
+                gray,
+                0,
+                255,
+                thresh_type + cv2.THRESH_OTSU,
+            )
 
-    def _postprocess_mask(self, mask: np.ndarray) -> np.ndarray:
-        if not self.use_morphology:
-            return mask
-
-        kernel = np.ones(
-            (self.morphology_kernel_size, self.morphology_kernel_size),
-            np.uint8,
-        )
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
         return mask
 
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
-        roi_frame, x_offset, y_offset = self._extract_roi(frame)
+        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
+
+        gray = convert_color(roi_frame, self.color_mode)
+
+        if self.blur_kernel is not None:
+            gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
+
+        mask = self._threshold(gray)
+
+        if self.use_morphology:
+            mask = clean_mask(
+                mask,
+                kernel_size=self.morphology_kernel_size,
+                open_iter=1,
+                close_iter=2,
+            )
+
+        contours, _ = cv2.findContours(
+            mask,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
+        )
+
+        contours = filter_contours(
+            contours,
+            min_area=self.min_area,
+            min_aspect_ratio=1.2,
+        )
+
+        detections = [
+            contour_to_detection(c, x_offset, y_offset, "particle_bed")
+            for c in contours
+        ]
+
+        full_mask = make_full_mask(frame, mask, x_offset, y_offset)
+        return full_mask, detections
+
+
+# =========================================================
+# OPTICAL BOX SEGMENTER
+# currently not required by pipeline, but usable later
+# =========================================================
+class OpticalBoxSegmenter:
+    def __init__(
+        self,
+        min_area: float = 300.0,
+        blur_kernel: Tuple[int, int] = (5, 5),
+        roi: Optional[Tuple[int, int, int, int]] = None,
+        color_mode: str = "gray",
+        canny_low: int = 30,
+        canny_high: int = 120,
+        morphology_kernel_size: int = 5,
+    ) -> None:
+        self.min_area = min_area
+        self.blur_kernel = blur_kernel
+        self.roi = roi
+        self.color_mode = color_mode
+        self.canny_low = canny_low
+        self.canny_high = canny_high
+        self.morphology_kernel_size = morphology_kernel_size
+
+    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         gray = convert_color(roi_frame, self.color_mode)
         gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
-        _, mask = cv2.threshold(
-            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
+        edges = cv2.Canny(gray, self.canny_low, self.canny_high)
 
-        mask = self._postprocess_mask(mask)
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (self.morphology_kernel_size, self.morphology_kernel_size),
+        )
+        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         contours, _ = cv2.findContours(
-            mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            edges,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
         )
 
-        detections: List[Dict[str, Any]] = []
-        for contour in contours:
-            area = float(cv2.contourArea(contour))
-            if area < self.min_area:
-                continue
+        contours = filter_contours(contours, min_area=self.min_area)
 
-            x, y, w, h = cv2.boundingRect(contour)
-            x += x_offset
-            y += y_offset
+        detections = [
+            contour_to_detection(c, x_offset, y_offset, "optical_box")
+            for c in contours
+        ]
 
-            cx = x + w / 2.0
-            cy = y + h / 2.0
-
-            detections.append(
-                {
-                    "bbox": (int(x), int(y), int(w), int(h)),
-                    "center": (float(cx), float(cy)),
-                    "area": area,
-                    "label": "particle_bed",
-                }
-            )
-
-        full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-        full_mask[
-            y_offset:y_offset + mask.shape[0],
-            x_offset:x_offset + mask.shape[1],
-        ] = mask
-
+        full_mask = make_full_mask(frame, edges, x_offset, y_offset)
         return full_mask, detections
 
 
@@ -357,8 +419,8 @@ class BedSegmenterCV:
 # =========================================================
 class Detectron2Segmenter:
     """
-    Detectron2-basierte Instanzsegmentierung.
-    hiermit erwarte ich eine  funktionierende Detectron2-Installation im Container/auf HPC.
+    Detectron2-based instance segmentation.
+    Useful only if Detectron2 is installed inside the container.
     """
 
     def __init__(
@@ -399,8 +461,6 @@ class Detectron2Segmenter:
 
         boxes = instances.pred_boxes.tensor.numpy()
         masks = instances.pred_masks.numpy() if instances.has("pred_masks") else None
-        classes = instances.pred_classes.numpy() if instances.has("pred_classes") else None
-        scores = instances.scores.numpy() if instances.has("scores") else None
         classes = (
             instances.pred_classes.numpy().tolist()
             if instances.has("pred_classes")
@@ -414,10 +474,11 @@ class Detectron2Segmenter:
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.astype(int)
-            w = x2 - x1
-            h = y2 - y1
-            cx = x1 + w / 2.0
-            cy = y1 + h / 2.0
+
+            w = int(x2 - x1)
+            h = int(y2 - y1)
+            cx = float(x1 + w / 2.0)
+            cy = float(y1 + h / 2.0)
             area = float(w * h)
 
             if masks is not None:
@@ -426,18 +487,11 @@ class Detectron2Segmenter:
             detections.append(
                 {
                     "bbox": (int(x1), int(y1), int(w), int(h)),
-                    "center": (float(x1 + w / 2.0), float(y1 + h / 2.0)),
-                    "area": float(w * h),
+                    "center": (cx, cy),
+                    "area": area,
                     "label": "detectron2_object",
                     "class_id": int(classes[i]) if classes is not None else None,
                     "score": float(scores[i]) if scores is not None else None,
-
-                    "bbox": (x1, y1, w, h),
-                    "center": (cx, cy),
-                    "area": area,
-                    "class_id": classes[i] if classes is not None else None,
-                    "score": scores[i] if scores is not None else None,
-                    "label": "detectron2_object",
                 }
             )
 
