@@ -4,7 +4,7 @@ set -euo pipefail
 CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
-OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_cv0_1"
+OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_cv0_2"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
 
