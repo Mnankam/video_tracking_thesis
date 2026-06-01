@@ -78,14 +78,31 @@ def clean_mask(
     kernel_size: int = 5,
     open_iter: int = 1,
     close_iter: int = 2,
+    horizontal: bool = False,
 ) -> np.ndarray:
-    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    if horizontal:
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (kernel_size * 3, kernel_size),
+        )
+    else:
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
 
     if open_iter > 0:
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=open_iter)
+        mask = cv2.morphologyEx(
+            mask,
+            cv2.MORPH_OPEN,
+            kernel,
+            iterations=open_iter,
+        )
 
     if close_iter > 0:
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=close_iter)
+        mask = cv2.morphologyEx(
+            mask,
+            cv2.MORPH_CLOSE,
+            kernel,
+            iterations=close_iter,
+        )
 
     return mask
 
@@ -123,7 +140,7 @@ def filter_contours(
     min_aspect_ratio: Optional[float] = None,
     max_aspect_ratio: Optional[float] = None,
 ) -> List[np.ndarray]:
-    valid = []
+    valid: List[np.ndarray] = []
 
     for contour in contours:
         area = float(cv2.contourArea(contour))
@@ -149,20 +166,20 @@ def filter_contours(
 # =========================================================
 class InnerPipeSegmenter:
     """
-    Detects the inner transparent pipe inside inner_pipe_roi.
-    The method focuses on horizontal elongated edge structures.
+    Detektiert das innere transparente Rohr innerhalb von inner_pipe_roi.
+    Fokus: lange horizontale Kantenstrukturen.
     """
 
     def __init__(
         self,
         min_area: float = 80.0,
         blur_kernel: Tuple[int, int] = (5, 5),
-        canny_low: int = 30,
-        canny_high: int = 120,
+        canny_low: int = 40,
+        canny_high: int = 140,
         morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
-        min_aspect_ratio: float = 4.0,
+        min_aspect_ratio: float = 6.0,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -185,7 +202,7 @@ class InnerPipeSegmenter:
 
         kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT,
-            (self.morphology_kernel_size * 3, self.morphology_kernel_size),
+            (25, 3),
         )
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
 
@@ -247,7 +264,13 @@ class PipeSegmenterCV:
         )
 
         if self.use_morphology:
-            mask = clean_mask(mask, self.morphology_kernel_size)
+            mask = clean_mask(
+                mask,
+                kernel_size=self.morphology_kernel_size,
+                open_iter=1,
+                close_iter=2,
+                horizontal=True,
+            )
 
         contours, _ = cv2.findContours(
             mask,
@@ -275,9 +298,9 @@ class PipeSegmenterCV:
 # =========================================================
 class BedSegmenterCV:
     """
-    Detects the particle/fluidized bed region.
-    Uses HSV information when possible, because the bed is usually
-    better separated in saturation/value than in pure grayscale.
+    Detektiert den Bettbereich.
+    Für transparente Rohre und Reflexionen ist adaptive Thresholding
+    meist robuster als reines OTSU.
     """
 
     def __init__(
@@ -287,9 +310,9 @@ class BedSegmenterCV:
         use_morphology: bool = True,
         morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
-        color_mode: str = "hsv_s",
-        threshold_mode: str = "otsu",
-        invert: bool = False,
+        color_mode: str = "hsv_v",
+        threshold_mode: str = "adaptive",
+        invert: bool = True,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -302,23 +325,22 @@ class BedSegmenterCV:
 
     def _threshold(self, gray: np.ndarray) -> np.ndarray:
         if self.threshold_mode == "adaptive":
-            mask = cv2.adaptiveThreshold(
+            return cv2.adaptiveThreshold(
                 gray,
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY,
+                cv2.THRESH_BINARY_INV,
                 31,
-                -3,
-            )
-        else:
-            thresh_type = cv2.THRESH_BINARY_INV if self.invert else cv2.THRESH_BINARY
-            _, mask = cv2.threshold(
-                gray,
-                0,
-                255,
-                thresh_type + cv2.THRESH_OTSU,
+                3,
             )
 
+        thresh_type = cv2.THRESH_BINARY_INV if self.invert else cv2.THRESH_BINARY
+        _, mask = cv2.threshold(
+            gray,
+            0,
+            255,
+            thresh_type + cv2.THRESH_OTSU,
+        )
         return mask
 
     def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
@@ -337,6 +359,7 @@ class BedSegmenterCV:
                 kernel_size=self.morphology_kernel_size,
                 open_iter=1,
                 close_iter=2,
+                horizontal=True,
             )
 
         contours, _ = cv2.findContours(
@@ -348,7 +371,7 @@ class BedSegmenterCV:
         contours = filter_contours(
             contours,
             min_area=self.min_area,
-            min_aspect_ratio=1.2,
+            min_aspect_ratio=3.0,
         )
 
         detections = [
@@ -393,7 +416,7 @@ class OpticalBoxSegmenter:
 
         kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT,
-            (self.morphology_kernel_size, self.morphology_kernel_size),
+            (15, 5),
         )
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
 
@@ -419,8 +442,8 @@ class OpticalBoxSegmenter:
 # =========================================================
 class Detectron2Segmenter:
     """
-    Detectron2-based instance segmentation.
-    Useful only if Detectron2 is installed inside the container.
+    Detectron2-basierte Instanzsegmentierung.
+    Nur sinnvoll, wenn Detectron2 im Container installiert ist.
     """
 
     def __init__(
