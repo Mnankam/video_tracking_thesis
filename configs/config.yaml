@@ -21,7 +21,7 @@ device: cpu
 
 pipe_roi: [60, 315, 1160, 75]
 
-inner_pipe_roi: [280, 330, 760, 35]
+inner_pipe_roi: [280, 360, 760, 35]
 
 bed_roi: [300, 365, 760, 42]
 
