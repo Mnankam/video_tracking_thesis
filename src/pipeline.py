@@ -16,6 +16,7 @@ from src.segmentation import (
     BedSegmenterCV,
     Detectron2Segmenter,
     InnerPipeSegmenter,
+    OpticalBoxSegmenter,
 )
 from src.bed_edge import BedEdgeDetector
 from src.tracking import SingleObjectTracker, MultiObjectTracker
@@ -42,6 +43,7 @@ class PipelineConfig:
     enable_tracking: bool = True
     enable_bed_edge: bool = True
     enable_inner_pipe: bool = False
+    enable_optical_box: bool = True
 
     save_debug_frames: bool = False
     debug_dir: str = "outputs/debug"
@@ -87,7 +89,6 @@ class VideoPipeline:
         self.bed_edge_history = deque(maxlen=config.bed_edge_median_window)
         self.bed_edge_ema: Optional[float] = None
 
-        # Deflicker
         self.deflicker = None
         if config.enable_deflicker:
             deflicker_roi_tuple = (
@@ -104,7 +105,6 @@ class VideoPipeline:
                 roi=deflicker_roi_tuple,
             )
 
-        # Hauptsegmentierung
         if config.segmentation_mode == "detectron2":
             if not config.detectron2_config_file:
                 raise ValueError("detectron2_config_file fehlt.")
@@ -137,7 +137,6 @@ class VideoPipeline:
                 f"Unbekannter segmentation_mode: {config.segmentation_mode}"
             )
 
-                # Inneres Rohr
         self.inner_pipe_segmenter = None
         if config.enable_inner_pipe:
             inner_pipe_roi_tuple = (
@@ -148,14 +147,21 @@ class VideoPipeline:
                 color_mode="gray",
             )
 
-        # Tracking
+        self.optical_box_segmenter = None
+        if config.enable_optical_box:
+            optical_box_roi_tuple = (
+                tuple(config.optical_box_roi) if config.optical_box_roi else None
+            )
+            self.optical_box_segmenter = OpticalBoxSegmenter(
+                roi=optical_box_roi_tuple,
+                color_mode="gray",
+            )
+
         if config.enable_tracking:
             if config.segmentation_mode == "pipe_cv":
                 self.tracker = SingleObjectTracker()
-
             elif config.segmentation_mode in ["bed_cv", "detectron2", "yolo"]:
                 self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
-
             else:
                 raise ValueError(
                     f"Unsupported segmentation_mode: {config.segmentation_mode}"
@@ -163,7 +169,6 @@ class VideoPipeline:
         else:
             self.tracker = None
 
-        # Bettkante
         self.bed_edge_detector = None
         if config.enable_bed_edge:
             roi_tuple = tuple(config.bed_edge_roi) if config.bed_edge_roi else None
@@ -171,6 +176,7 @@ class VideoPipeline:
                 roi=roi_tuple,
                 color_mode=config.bed_edge_color_mode,
             )
+
         output_dir = os.path.dirname(config.output_csv)
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
@@ -226,6 +232,27 @@ class VideoPipeline:
             cv2.LINE_AA,
         )
 
+    def _draw_detections(self, vis, detections, color, label):
+        if not detections:
+            return
+
+        for det in detections:
+            x, y, w, h = det["bbox"]
+            cx, cy = det["center"]
+
+            cv2.rectangle(vis, (x, y), (x + w, y + h), color, 2)
+            cv2.circle(vis, (int(cx), int(cy)), 4, color, -1)
+            cv2.putText(
+                vis,
+                label,
+                (x, max(20, y - 5)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                color,
+                1,
+                cv2.LINE_AA,
+            )
+
     def _write_debug_frame(
         self,
         frame_idx: int,
@@ -235,16 +262,16 @@ class VideoPipeline:
         bed_edge_y_raw=None,
         bed_edge_y_smooth=None,
         inner_pipe_detections=None,
+        optical_box_detections=None,
     ) -> None:
         vis = frame.copy()
 
-        # ROIs zeichnen
+        self._draw_roi(vis, self.config.pipe_roi, (0, 255, 0), "pipe_roi")
+        self._draw_roi(vis, self.config.inner_pipe_roi, (255, 255, 0), "inner_pipe_roi")
         self._draw_roi(vis, self.config.bed_roi, (0, 255, 255), "bed_roi")
         self._draw_roi(vis, self.config.bed_edge_roi, (255, 0, 0), "bed_edge_roi")
-        self._draw_roi(vis, self.config.inner_pipe_roi, (255, 255, 0), "inner_pipe_roi")
-        self._draw_roi(vis, self.config.pipe_roi, (0, 255, 0), "pipe_roi")
+        self._draw_roi(vis, self.config.optical_box_roi, (255, 0, 255), "optical_box_roi")
 
-        # Tracking zeichnen
         for track in tracks:
             x, y, w, h = track["bbox"]
             cx, cy = track["center"]
@@ -262,26 +289,20 @@ class VideoPipeline:
                 cv2.LINE_AA,
             )
 
-        # Inneres Rohr zeichnen
-        if inner_pipe_detections:
-            for det in inner_pipe_detections:
-                x, y, w, h = det["bbox"]
-                cx, cy = det["center"]
+        self._draw_detections(
+            vis,
+            inner_pipe_detections,
+            (255, 255, 0),
+            "inner_pipe",
+        )
 
-                cv2.rectangle(vis, (x, y), (x + w, y + h), (255, 255, 0), 2)
-                cv2.circle(vis, (int(cx), int(cy)), 4, (255, 255, 0), -1)
-                cv2.putText(
-                    vis,
-                    "inner_pipe",
-                    (x, max(20, y - 5)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 255, 0),
-                    1,
-                    cv2.LINE_AA,
-                )
+        self._draw_detections(
+            vis,
+            optical_box_detections,
+            (255, 0, 255),
+            "optical_box",
+        )
 
-        # Bettkante roh
         if bed_edge_y_raw is not None:
             cv2.line(
                 vis,
@@ -301,7 +322,6 @@ class VideoPipeline:
                 cv2.LINE_AA,
             )
 
-        # Bettkante geglättet
         if bed_edge_y_smooth is not None:
             cv2.line(
                 vis,
@@ -374,6 +394,12 @@ class VideoPipeline:
                     "inner_pipe_h",
                     "inner_pipe_center_x",
                     "inner_pipe_center_y",
+                    "optical_box_x",
+                    "optical_box_y",
+                    "optical_box_w",
+                    "optical_box_h",
+                    "optical_box_center_x",
+                    "optical_box_center_y",
                     "processing_time_s",
                 ]
             )
@@ -390,7 +416,6 @@ class VideoPipeline:
                 if self.deflicker is not None:
                     frame = self.deflicker.apply(frame)
 
-                # Bettkante
                 bed_edge_y_raw = None
                 bed_edge_y_smooth = None
 
@@ -400,15 +425,16 @@ class VideoPipeline:
                         bed_edge_y_raw = bed_edge_result.get("y_edge")
                         bed_edge_y_smooth = self._smooth_bed_edge(bed_edge_y_raw)
 
-                # Hauptsegmentierung
                 mask, detections = self.segmenter.segment(frame)
 
-                # Inneres Rohr separat
                 inner_pipe_detections = []
                 if self.inner_pipe_segmenter is not None:
                     _, inner_pipe_detections = self.inner_pipe_segmenter.segment(frame)
 
-                # Tracking
+                optical_box_detections = []
+                if self.optical_box_segmenter is not None:
+                    _, optical_box_detections = self.optical_box_segmenter.segment(frame)
+
                 if self.tracker is not None:
                     tracker_result = self.tracker.update(detections)
 
@@ -427,7 +453,6 @@ class VideoPipeline:
 
                 time_seconds = frame_idx / video_fps if video_fps > 0 else 0.0
 
-                # Inner-Pipe: aktuell beste/erste Detektion speichern
                 if inner_pipe_detections:
                     ip = inner_pipe_detections[0]
                     ip_x, ip_y, ip_w, ip_h = ip["bbox"]
@@ -436,51 +461,40 @@ class VideoPipeline:
                     ip_x = ip_y = ip_w = ip_h = ""
                     ip_cx = ip_cy = ""
 
-                if tracks:
-                    for t in tracks:
+                if optical_box_detections:
+                    ob = optical_box_detections[0]
+                    ob_x, ob_y, ob_w, ob_h = ob["bbox"]
+                    ob_cx, ob_cy = ob["center"]
+                else:
+                    ob_x = ob_y = ob_w = ob_h = ""
+                    ob_cx = ob_cy = ""
+
+                rows_to_write = tracks if tracks else [None]
+
+                for t in rows_to_write:
+                    if t is not None:
                         x, y, w, h = t["bbox"]
                         cx, cy = t["center"]
+                        track_id = t["track_id"]
+                        area = t["area"]
+                    else:
+                        x = y = w = h = ""
+                        cx = cy = ""
+                        track_id = -1
+                        area = ""
 
-                        writer.writerow(
-                            [
-                                frame_idx,
-                                round(time_seconds, 6),
-                                t["track_id"],
-                                x,
-                                y,
-                                w,
-                                h,
-                                round(cx, 3),
-                                round(cy, 3),
-                                round(t["area"], 3),
-                                round(bed_edge_y_raw, 3)
-                                if bed_edge_y_raw is not None
-                                else "",
-                                round(bed_edge_y_smooth, 3)
-                                if bed_edge_y_smooth is not None
-                                else "",
-                                ip_x,
-                                ip_y,
-                                ip_w,
-                                ip_h,
-                                round(ip_cx, 3) if ip_cx != "" else "",
-                                round(ip_cy, 3) if ip_cy != "" else "",
-                                round(elapsed, 6),
-                            ]
-                        )
-                else:
                     writer.writerow(
                         [
                             frame_idx,
                             round(time_seconds, 6),
-                            -1,
-                            "",
-                            "",
-                            "",
-                            "",
-                            "",
-                            "",
-                            "",
+                            track_id,
+                            x,
+                            y,
+                            w,
+                            h,
+                            round(cx, 3) if cx != "" else "",
+                            round(cy, 3) if cy != "" else "",
+                            round(area, 3) if area != "" else "",
                             round(bed_edge_y_raw, 3)
                             if bed_edge_y_raw is not None
                             else "",
@@ -493,6 +507,12 @@ class VideoPipeline:
                             ip_h,
                             round(ip_cx, 3) if ip_cx != "" else "",
                             round(ip_cy, 3) if ip_cy != "" else "",
+                            ob_x,
+                            ob_y,
+                            ob_w,
+                            ob_h,
+                            round(ob_cx, 3) if ob_cx != "" else "",
+                            round(ob_cy, 3) if ob_cy != "" else "",
                             round(elapsed, 6),
                         ]
                     )
@@ -506,6 +526,7 @@ class VideoPipeline:
                         bed_edge_y_raw=bed_edge_y_raw,
                         bed_edge_y_smooth=bed_edge_y_smooth,
                         inner_pipe_detections=inner_pipe_detections,
+                        optical_box_detections=optical_box_detections,
                     )
 
                 processed_frames += 1
@@ -526,6 +547,7 @@ class VideoPipeline:
             "deflicker_freq": self.config.deflicker_freq,
             "bed_edge_smoothing": self.config.bed_edge_smoothing,
             "enable_inner_pipe": self.config.enable_inner_pipe,
+            "enable_optical_box": self.config.enable_optical_box,
         }
 
         eval_summary = self.evaluator.summary()
@@ -554,6 +576,7 @@ def load_config(path: str) -> PipelineConfig:
         enable_tracking=data.get("enable_tracking", True),
         enable_bed_edge=data.get("enable_bed_edge", True),
         enable_inner_pipe=data.get("enable_inner_pipe", False),
+        enable_optical_box=data.get("enable_optical_box", True),
         save_debug_frames=data.get("save_debug_frames", False),
         debug_dir=data.get("debug_dir", "outputs/debug"),
         segmentation_mode=data.get("segmentation_mode", "pipe_cv"),
