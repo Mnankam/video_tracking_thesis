@@ -22,13 +22,13 @@ device: cpu
 
 pipe_roi: [40, 330, 1140, 60]
 
-inner_pipe_roi: [135, 356, 560, 18]
+inner_pipe_roi: [120, 356, 620, 18]
 
-bed_edge_roi: [145, 392, 540, 14]
+bed_edge_roi: [120, 392, 620, 14]
 
-bed_roi: [145, 400, 540, 32]
+bed_roi: [120, 400, 620, 32]
 
-optical_box_roi: [180, 300, 840, 185]
+optical_box_roi: [260, 300, 1100, 185]
 bed_edge_color_mode: hsv_v
 bed_edge_smoothing: true
 bed_edge_median_window: 5
