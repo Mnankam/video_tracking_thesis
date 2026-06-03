@@ -19,15 +19,15 @@ segmentation_mode: bed_cv
 segmentation_color_mode: hsv_v
 device: cpu
 
-pipe_roi: [40, 300, 1180, 70]
+pipe_roi: [25, 310, 1180, 80]
 
-inner_pipe_roi: [120, 330, 560, 28]
+inner_pipe_roi: [80, 335, 560, 30]
 
-bed_edge_roi: [160, 365, 520, 45]
+bed_edge_roi: [100, 365, 530, 25]
 
-bed_roi: [160, 385, 520, 55]
+bed_roi: [100, 375, 530, 50]
 
-optical_box_roi: [120, 285, 760, 145]
+optical_box_roi: [80, 280, 760, 170]
 bed_edge_color_mode: hsv_v
 bed_edge_smoothing: true
 bed_edge_median_window: 5
