@@ -289,19 +289,8 @@ class VideoPipeline:
                 cv2.LINE_AA,
             )
 
-        self._draw_detections(
-            vis,
-            inner_pipe_detections,
-            (255, 255, 0),
-            "inner_pipe",
-        )
-
-        self._draw_detections(
-            vis,
-            optical_box_detections,
-            (255, 0, 255),
-            "optical_box",
-        )
+        self._draw_detections(vis, inner_pipe_detections, (255, 255, 0), "inner_pipe")
+        self._draw_detections(vis, optical_box_detections, (255, 0, 255), "optical_box")
 
         if bed_edge_y_raw is not None:
             cv2.line(
@@ -426,14 +415,26 @@ class VideoPipeline:
                         bed_edge_y_smooth = self._smooth_bed_edge(bed_edge_y_raw)
 
                 mask, detections = self.segmenter.segment(frame)
+                debug_mask = mask.copy()
 
                 inner_pipe_detections = []
                 if self.inner_pipe_segmenter is not None:
-                    _, inner_pipe_detections = self.inner_pipe_segmenter.segment(frame)
+                    inner_pipe_mask, inner_pipe_detections = self.inner_pipe_segmenter.segment(frame)
+                    debug_mask = cv2.bitwise_or(debug_mask, inner_pipe_mask)
 
                 optical_box_detections = []
                 if self.optical_box_segmenter is not None:
-                    _, optical_box_detections = self.optical_box_segmenter.segment(frame)
+                    optical_box_mask, optical_box_detections = self.optical_box_segmenter.segment(frame)
+                    debug_mask = cv2.bitwise_or(debug_mask, optical_box_mask)
+
+                if bed_edge_y_smooth is not None:
+                    cv2.line(
+                        debug_mask,
+                        (0, int(bed_edge_y_smooth)),
+                        (debug_mask.shape[1] - 1, int(bed_edge_y_smooth)),
+                        255,
+                        2,
+                    )
 
                 if self.tracker is not None:
                     tracker_result = self.tracker.update(detections)
@@ -521,7 +522,7 @@ class VideoPipeline:
                     self._write_debug_frame(
                         frame_idx,
                         frame,
-                        mask,
+                        debug_mask,
                         tracks,
                         bed_edge_y_raw=bed_edge_y_raw,
                         bed_edge_y_smooth=bed_edge_y_smooth,
