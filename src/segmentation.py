@@ -126,14 +126,14 @@ def filter_contours(
 class InnerPipeSegmenter:
     def __init__(
         self,
-        min_area: float = 20.0,
+        min_area: float = 120.0,
         blur_kernel: Tuple[int, int] = (3, 3),
         canny_low: int = 20,
         canny_high: int = 90,
         morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
-        min_aspect_ratio: float = 2.0,
+        min_aspect_ratio: float = 8.0,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -166,8 +166,8 @@ class InnerPipeSegmenter:
             contours,
             min_area=self.min_area,
             min_aspect_ratio=self.min_aspect_ratio,
-            min_width=20,
-            max_height=40,
+            min_width=160,
+            max_height=12,
         )
 
         detections = []
