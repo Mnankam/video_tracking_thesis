@@ -24,10 +24,7 @@ def convert_color(frame: np.ndarray, mode: str) -> np.ndarray:
     return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 
-def extract_roi(
-    frame: np.ndarray,
-    roi: Optional[Tuple[int, int, int, int]],
-) -> Tuple[np.ndarray, int, int]:
+def extract_roi(frame: np.ndarray, roi: Optional[Tuple[int, int, int, int]]):
     if roi is None:
         return frame, 0, 0
 
@@ -42,12 +39,7 @@ def extract_roi(
     return frame[y:y + h, x:x + w], x, y
 
 
-def make_full_mask(
-    frame: np.ndarray,
-    roi_mask: np.ndarray,
-    x_offset: int,
-    y_offset: int,
-) -> np.ndarray:
+def make_full_mask(frame, roi_mask, x_offset, y_offset):
     full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
     full_mask[
         y_offset:y_offset + roi_mask.shape[0],
@@ -56,13 +48,7 @@ def make_full_mask(
     return full_mask
 
 
-def clean_mask(
-    mask: np.ndarray,
-    kernel_size: int = 3,
-    open_iter: int = 1,
-    close_iter: int = 1,
-    horizontal: bool = False,
-) -> np.ndarray:
+def clean_mask(mask, kernel_size=3, open_iter=1, close_iter=1, horizontal=False):
     if horizontal:
         kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT,
@@ -80,12 +66,7 @@ def clean_mask(
     return mask
 
 
-def contour_to_detection(
-    contour: np.ndarray,
-    x_offset: int,
-    y_offset: int,
-    label: str,
-) -> Dict[str, Any]:
+def contour_to_detection(contour, x_offset, y_offset, label):
     x, y, w, h = cv2.boundingRect(contour)
 
     x_global = x + x_offset
@@ -108,15 +89,15 @@ def contour_to_detection(
 
 
 def filter_contours(
-    contours: List[np.ndarray],
-    min_area: float,
-    min_aspect_ratio: Optional[float] = None,
-    max_aspect_ratio: Optional[float] = None,
-    min_width: Optional[int] = None,
-    min_height: Optional[int] = None,
-    max_height: Optional[int] = None,
-) -> List[np.ndarray]:
-    valid: List[np.ndarray] = []
+    contours,
+    min_area,
+    min_aspect_ratio=None,
+    max_aspect_ratio=None,
+    min_width=None,
+    min_height=None,
+    max_height=None,
+):
+    valid = []
 
     for contour in contours:
         area = float(cv2.contourArea(contour))
@@ -163,7 +144,7 @@ class InnerPipeSegmenter:
         self.color_mode = color_mode
         self.min_aspect_ratio = min_aspect_ratio
 
-    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
         gray = convert_color(roi_frame, self.color_mode)
 
@@ -172,7 +153,7 @@ class InnerPipeSegmenter:
 
         edges = cv2.Canny(gray, self.canny_low, self.canny_high)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 2))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 2))
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
         contours, _ = cv2.findContours(
@@ -189,7 +170,7 @@ class InnerPipeSegmenter:
             max_height=40,
         )
 
-        detections: List[Dict[str, Any]] = []
+        detections = []
 
         if contours:
             best = max(contours, key=cv2.contourArea)
@@ -218,7 +199,7 @@ class PipeSegmenterCV:
         self.roi = roi
         self.color_mode = color_mode
 
-    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         gray = convert_color(roi_frame, self.color_mode)
@@ -285,7 +266,7 @@ class BedSegmenterCV:
         self.threshold_mode = threshold_mode
         self.invert = invert
 
-    def _threshold(self, gray: np.ndarray) -> np.ndarray:
+    def _threshold(self, gray):
         if self.threshold_mode == "adaptive":
             return cv2.adaptiveThreshold(
                 gray,
@@ -305,7 +286,7 @@ class BedSegmenterCV:
         )
         return mask
 
-    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         gray = convert_color(roi_frame, self.color_mode)
@@ -366,7 +347,7 @@ class OpticalBoxSegmenter:
         self.canny_high = canny_high
         self.morphology_kernel_size = morphology_kernel_size
 
-    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         gray = convert_color(roi_frame, self.color_mode)
@@ -431,13 +412,13 @@ class Detectron2Segmenter:
         self.cfg = cfg
         self.predictor = DefaultPredictor(cfg)
 
-    def segment(self, frame: np.ndarray) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def segment(self, frame):
         outputs = self.predictor(frame)
         instances = outputs["instances"].to("cpu")
 
         height, width = frame.shape[:2]
         full_mask = np.zeros((height, width), dtype=np.uint8)
-        detections: List[Dict[str, Any]] = []
+        detections = []
 
         if not instances.has("pred_boxes"):
             return full_mask, detections
