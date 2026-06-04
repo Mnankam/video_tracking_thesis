@@ -2,7 +2,7 @@ video_path: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/d
 output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/results.csv
 
 start_frame: 0
-end_frame: 20
+end_frame: 1000
 
 resize_width: 1280
 resize_height: 720
