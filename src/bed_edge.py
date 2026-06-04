@@ -14,6 +14,7 @@ class BedEdgeDetector:
     - ROI ausschneiden
     - Farbe/Grauwert analysieren
     - horizontale Kanten über vertikalen Gradienten suchen
+    - kleine Lücken entlang horizontaler Kanten schließen
     - den unteren Teil der ROI stärker gewichten
     - Ergebnis in globale Bildkoordinaten zurückrechnen
     """
@@ -27,7 +28,7 @@ class BedEdgeDetector:
         color_mode: str = "gray",
         prefer_lower_half: bool = True,
         lower_weight_strength: float = 1.8,
-        min_signal: float = 5.0,
+        min_signal: float = 18.0,
     ) -> None:
         self.roi = roi
         self.blur_kernel = blur_kernel
@@ -55,7 +56,7 @@ class BedEdgeDetector:
 
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    def _extract_roi(self, frame: np.ndarray):
+    def _extract_roi(self, frame: np.ndarray) -> Tuple[np.ndarray, int, int]:
         h, w = frame.shape[:2]
 
         if self.roi is None:
@@ -83,7 +84,7 @@ class BedEdgeDetector:
         sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
         gradient_profile = np.mean(np.abs(sobel_y), axis=1)
 
-        # Optional zusätzlich eine Maskeninformation verwenden
+        # Maske zur Unterstützung der Kantenentscheidung
         _, mask = cv2.threshold(
             gray,
             self.threshold_value,
@@ -91,9 +92,12 @@ class BedEdgeDetector:
             cv2.THRESH_BINARY,
         )
 
+        # Horizontale Lücken schließen:
+        # vorher sinngemäß kleiner/variabler Kernel,
+        # jetzt bewusst (35, 2), um Bettkantenfragmente horizontal zu verbinden.
         kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT,
-            (self.morphology_kernel_size * 3, self.morphology_kernel_size),
+            (35, 2),
         )
 
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
@@ -104,12 +108,14 @@ class BedEdgeDetector:
         # Kombination aus Kantenstärke und Maskensignal
         score = gradient_profile * (1.0 + mask_profile)
 
-        # Unteren Teil der ROI bevorzugen, damit obere Reflexionen weniger stark dominieren
+        # Unteren Teil der ROI bevorzugen, damit obere Reflexionen weniger dominieren
         if self.prefer_lower_half:
             n = len(score)
             weights = np.linspace(1.0, self.lower_weight_strength, n)
             score = score * weights
 
+        # entspricht deiner gewünschten Robustheitsverschärfung:
+        # threshold_profile = 18 -> hier min_signal = 18.0
         if len(score) == 0 or float(np.max(score)) < self.min_signal:
             return {
                 "success": False,
