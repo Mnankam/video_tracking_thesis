@@ -6,34 +6,21 @@ import cv2
 import numpy as np
 
 
-# =========================================================
-# COLOR CONVERSION
-# =========================================================
 def convert_color(frame: np.ndarray, mode: str) -> np.ndarray:
     if mode == "gray":
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
     if mode == "r":
         return frame[:, :, 2]
-
     if mode == "g":
         return frame[:, :, 1]
-
     if mode == "b":
         return frame[:, :, 0]
-
     if mode == "hsv_h":
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        return hsv[:, :, 0]
-
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[:, :, 0]
     if mode == "hsv_s":
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        return hsv[:, :, 1]
-
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[:, :, 1]
     if mode == "hsv_v":
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        return hsv[:, :, 2]
-
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[:, :, 2]
     return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 
@@ -71,7 +58,7 @@ def make_full_mask(
 
 def clean_mask(
     mask: np.ndarray,
-    kernel_size: int = 5,
+    kernel_size: int = 3,
     open_iter: int = 1,
     close_iter: int = 1,
     horizontal: bool = False,
@@ -155,20 +142,17 @@ def filter_contours(
     return valid
 
 
-# =========================================================
-# INNER PIPE SEGMENTER
-# =========================================================
 class InnerPipeSegmenter:
     def __init__(
         self,
-        min_area: float = 60.0,
+        min_area: float = 30.0,
         blur_kernel: Tuple[int, int] = (3, 3),
-        canny_low: int = 35,
-        canny_high: int = 130,
-        morphology_kernel_size: int = 5,
+        canny_low: int = 25,
+        canny_high: int = 110,
+        morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
-        min_aspect_ratio: float = 5.0,
+        min_aspect_ratio: float = 3.0,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -188,7 +172,7 @@ class InnerPipeSegmenter:
 
         edges = cv2.Canny(gray, self.canny_low, self.canny_high)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 2))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 2))
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
 
         contours, _ = cv2.findContours(
@@ -201,8 +185,8 @@ class InnerPipeSegmenter:
             contours,
             min_area=self.min_area,
             min_aspect_ratio=self.min_aspect_ratio,
-            min_width=50,
-            max_height=30,
+            min_width=20,
+            max_height=40,
         )
 
         detections: List[Dict[str, Any]] = []
@@ -217,16 +201,13 @@ class InnerPipeSegmenter:
         return full_mask, detections
 
 
-# =========================================================
-# PIPE SEGMENTER
-# =========================================================
 class PipeSegmenterCV:
     def __init__(
         self,
-        min_area: float = 300.0,
+        min_area: float = 200.0,
         blur_kernel: Tuple[int, int] = (3, 3),
         use_morphology: bool = True,
-        morphology_kernel_size: int = 5,
+        morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
     ) -> None:
@@ -270,8 +251,8 @@ class PipeSegmenterCV:
         contours = filter_contours(
             contours,
             min_area=self.min_area,
-            min_aspect_ratio=2.0,
-            min_width=80,
+            min_aspect_ratio=1.5,
+            min_width=30,
         )
 
         detections = [
@@ -283,16 +264,13 @@ class PipeSegmenterCV:
         return full_mask, detections
 
 
-# =========================================================
-# BED SEGMENTER
-# =========================================================
 class BedSegmenterCV:
     def __init__(
         self,
-        min_area: float = 150.0,
+        min_area: float = 80.0,
         blur_kernel: Tuple[int, int] = (3, 3),
         use_morphology: bool = True,
-        morphology_kernel_size: int = 5,
+        morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "hsv_v",
         threshold_mode: str = "adaptive",
@@ -355,9 +333,9 @@ class BedSegmenterCV:
         contours = filter_contours(
             contours,
             min_area=self.min_area,
-            min_aspect_ratio=2.0,
-            min_width=50,
-            max_height=40,
+            min_aspect_ratio=1.2,
+            min_width=20,
+            max_height=60,
         )
 
         detections = [
@@ -369,9 +347,6 @@ class BedSegmenterCV:
         return full_mask, detections
 
 
-# =========================================================
-# OPTICAL BOX SEGMENTER
-# =========================================================
 class OpticalBoxSegmenter:
     def __init__(
         self,
@@ -381,7 +356,7 @@ class OpticalBoxSegmenter:
         color_mode: str = "gray",
         canny_low: int = 30,
         canny_high: int = 120,
-        morphology_kernel_size: int = 5,
+        morphology_kernel_size: int = 3,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -413,8 +388,8 @@ class OpticalBoxSegmenter:
         contours = filter_contours(
             contours,
             min_area=self.min_area,
-            min_aspect_ratio=1.5,
-            min_width=20,
+            min_aspect_ratio=1.2,
+            min_width=10,
             min_height=2,
         )
 
@@ -430,9 +405,6 @@ class OpticalBoxSegmenter:
         return full_mask, detections
 
 
-# =========================================================
-# DETECTRON2
-# =========================================================
 class Detectron2Segmenter:
     def __init__(
         self,
