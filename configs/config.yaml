@@ -1,5 +1,8 @@
 video_path: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4
+
 output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/results.csv
+
+optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/optical_flow.csv
 
 start_frame: 0
 end_frame: 1000
@@ -11,33 +14,72 @@ enable_deflicker: true
 enable_tracking: true
 enable_bed_edge: true
 enable_inner_pipe: true
+enable_optical_flow: true
 enable_optical_box: false
 
 save_debug_frames: true
+
 debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/debug
 
 segmentation_mode: bed_cv
 segmentation_color_mode: hsv_v
+
 device: cpu
 
+# =========================================================
+# Optical Flow Punkte
+# =========================================================
+optical_flow_points:
+  - [180, 365]
+  - [350, 365]
+  - [520, 365]
+
+  - [180, 406]
+  - [350, 406]
+  - [520, 406]
+
+# =========================================================
+# ROI Definitionen
+# =========================================================
 pipe_roi: [40, 330, 1140, 60]
+
 inner_pipe_roi: [135, 364, 620, 16]
+
 bed_edge_roi: [135, 398, 620, 12]
+
 bed_roi: [135, 406, 620, 26]
+
 optical_box_roi: [220, 300, 950, 185]
+
+# =========================================================
+# Bettkante
+# =========================================================
 bed_edge_color_mode: hsv_v
+
 bed_edge_smoothing: true
 bed_edge_median_window: 5
 bed_edge_ema_alpha: 0.3
 
+# =========================================================
+# Ergebnisse
+# =========================================================
 save_summary: true
+
 summary_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/summary.csv
 
+# =========================================================
+# Deflicker
+# =========================================================
 deflicker_fps: 200.0
 deflicker_freq: 50.0
+
 deflicker_use_second_harmonic: true
+
 deflicker_window_size: 256
 deflicker_min_history: 32
+
 deflicker_smooth_alpha: 0.2
+
 deflicker_use_median: true
+
 deflicker_roi: null
