@@ -18,6 +18,7 @@ for video in "$DATA"/*.MP4; do
     CONFIG_OUT="$OUT/configs/config_${name}.yaml"
     RESULTS_OUT="$OUT/${name}_results.csv"
     SUMMARY_OUT="$OUT/${name}_summary.csv"
+    OPTICAL_FLOW_OUT="$OUT/${name}_optical_flow.csv"
     DEBUG_OUT="$OUT/debug_${name}"
 
     echo "======================================"
@@ -30,7 +31,8 @@ for video in "$DATA"/*.MP4; do
     sed "s|^video_path:.*|video_path: $video|; \
          s|^output_csv:.*|output_csv: $RESULTS_OUT|; \
          s|^summary_csv:.*|summary_csv: $SUMMARY_OUT|; \
-         s|^debug_dir:.*|debug_dir: $DEBUG_OUT|" \
+         s|^debug_dir:.*|debug_dir: $DEBUG_OUT|; \
+         s|^optical_flow_csv:.*|optical_flow_csv: $OPTICAL_FLOW_OUT|" \
          configs/config.yaml > "$CONFIG_OUT"
 
     if [ -f "$RESULTS_OUT" ]; then
@@ -51,6 +53,23 @@ for video in "$DATA"/*.MP4; do
             echo "$OUT/logs/${name}_pipeline.log"
             continue
         fi
+    fi
+
+    echo "Running optical flow..."
+
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.optical_flow_test \
+            --config "$CONFIG_OUT" \
+            --output-csv "$OPTICAL_FLOW_OUT" \
+        > "$OUT/logs/${name}_optical_flow.log" 2>&1; then
+
+        echo "Optical flow finished: $name"
+    else
+        echo "Optical flow failed for $name. Check log:"
+        echo "$OUT/logs/${name}_optical_flow.log"
     fi
 
     echo "Running visualization..."
