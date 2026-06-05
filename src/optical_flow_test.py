@@ -13,18 +13,26 @@ def load_config(path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Optical Flow Test")
+    parser = argparse.ArgumentParser(description="Optical Flow Tracking")
     parser.add_argument("--config", required=True, help="Pfad zur config.yaml")
     parser.add_argument("--output-csv", default=None, help="Ausgabe-CSV")
     args = parser.parse_args()
 
     config = load_config(args.config)
 
+    if not config.get("enable_optical_flow", True):
+        print("Optical Flow ist in der Config deaktiviert.")
+        return
+
     video_path = config["video_path"]
     output_csv = args.output_csv or config.get("optical_flow_csv")
 
     if output_csv is None:
         raise ValueError("optical_flow_csv fehlt in config oder --output-csv.")
+
+    output_dir = os.path.dirname(output_csv)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
 
     start_frame = int(config.get("start_frame", 0))
     end_frame = config.get("end_frame", None)
@@ -39,8 +47,6 @@ def main():
 
     points = points.reshape(-1, 1, 2)
 
-    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
-
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
@@ -52,6 +58,9 @@ def main():
         end_frame = total_frames
     else:
         end_frame = min(int(end_frame), total_frames)
+
+    if start_frame >= end_frame:
+        raise ValueError(f"Ungültiger Framebereich: start={start_frame}, end={end_frame}")
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
@@ -92,7 +101,10 @@ def main():
         )
 
         if next_points is None or status is None:
+            print(f"Optical Flow abgebrochen bei Frame {frame_idx}.")
             break
+
+        valid_points = prev_points.copy()
 
         for i, (p0, p1, st) in enumerate(zip(prev_points, next_points, status)):
             if st[0] == 1:
@@ -112,16 +124,37 @@ def main():
                     }
                 )
 
+                valid_points[i] = p1
+            else:
+                x0, y0 = p0.ravel()
+
+                rows.append(
+                    {
+                        "frame": frame_idx,
+                        "time_seconds": frame_idx / video_fps if video_fps > 0 else 0.0,
+                        "point_id": i,
+                        "x": float(x0),
+                        "y": float(y0),
+                        "dx": 0.0,
+                        "dy": 0.0,
+                        "tracking_status": 0,
+                    }
+                )
+
         prev_gray = gray.copy()
-        prev_points = next_points.copy()
+        prev_points = valid_points.copy()
         frame_idx += 1
 
     cap.release()
 
     df = pd.DataFrame(rows)
+
+    if df.empty:
+        raise RuntimeError("Optical Flow hat keine Daten erzeugt.")
+
     df.to_csv(output_csv, index=False)
 
-    print(f"Optical Flow abgeschlossen.")
+    print("Optical Flow abgeschlossen.")
     print(f"Video: {video_path}")
     print(f"Frames: {start_frame} bis {end_frame}")
     print(f"Output: {output_csv}")
