@@ -4,7 +4,7 @@ set -euo pipefail
 CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
-OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_cv0_30"
+OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/batch_inner_pipe_cv0_31"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
 
@@ -99,7 +99,7 @@ for video in "$DATA"/*.MP4; do
             --csv "$OPTICAL_FLOW_OUT" \
             --out "$OPTICAL_FLOW_ANIMATION" \
             --start-frame 0 \
-            --end-frame 1000 \
+            --end-frame 100000 \
         > "$OUT/logs/${name}_optical_flow_animation.log" 2>&1; then
         echo "Optical flow animation finished: $name"
     else
