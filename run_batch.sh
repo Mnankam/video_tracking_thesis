@@ -99,7 +99,7 @@ for video in "$DATA"/*.MP4; do
             --csv "$OPTICAL_FLOW_OUT" \
             --out "$OPTICAL_FLOW_ANIMATION" \
             --start-frame 0 \
-            --end-frame 1000 \
+            --end-frame 100 \
         > "$OUT/logs/${name}_optical_flow_animation.log" 2>&1; then
         echo "Optical flow animation finished: $name"
     else
