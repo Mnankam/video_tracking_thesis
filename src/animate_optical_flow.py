@@ -34,37 +34,46 @@ def main():
     end_frame = args.end_frame if args.end_frame is not None else total
     end_frame = min(end_frame, total)
 
-    frames = list(range(args.start_frame, end_frame))
-    if len(frames) == 0:
+    if args.start_frame >= end_frame:
         raise ValueError("Keine Frames für Animation ausgewählt.")
 
     out_dir = os.path.dirname(args.out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    def read_gray_frame(frame_idx):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
-        ok, frame = cap.read()
-        if not ok:
-            raise RuntimeError(f"Frame konnte nicht gelesen werden: {frame_idx}")
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        return gray
+    cap.set(cv2.CAP_PROP_POS_FRAMES, args.start_frame)
 
-    first = read_gray_frame(args.start_frame)
+    ok, first_frame = cap.read()
+    if not ok:
+        raise RuntimeError(f"Start-Frame konnte nicht gelesen werden: {args.start_frame}")
+
+    first_gray = cv2.cvtColor(first_frame, cv2.COLOR_BGR2GRAY)
 
     fig, ax = plt.subplots(figsize=(15, 5))
-    img = ax.imshow(first, cmap="gray")
+    img = ax.imshow(first_gray, cmap="gray")
     scat = ax.scatter([], [], c="r", s=args.point_size, marker=".")
 
-    ax.set_title("Optical Flow Tracking Points")
+    ax.set_title(f"Optical Flow Tracking Points - Frame {args.start_frame}")
     ax.set_xlabel("x [px]")
     ax.set_ylabel("y [px]")
 
-    def update(frame_idx):
-        gray = read_gray_frame(frame_idx)
+    current_frame_idx = args.start_frame
+
+    def update(_):
+        nonlocal current_frame_idx
+
+        if current_frame_idx == args.start_frame:
+            gray = first_gray
+        else:
+            ok, frame = cap.read()
+            if not ok:
+                gray = np.zeros_like(first_gray)
+            else:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
         img.set_data(gray)
 
-        frame_points = df[df["frame"] == frame_idx]
+        frame_points = df[df["frame"] == current_frame_idx]
 
         if len(frame_points) > 0:
             xy = frame_points[["x", "y"]].values
@@ -72,13 +81,18 @@ def main():
         else:
             scat.set_offsets(np.empty((0, 2)))
 
-        ax.set_title(f"Optical Flow Tracking Points - Frame {frame_idx}")
+        ax.set_title(f"Optical Flow Tracking Points - Frame {current_frame_idx}")
+
+        current_frame_idx += 1
+
         return img, scat
+
+    frame_count = end_frame - args.start_frame
 
     ani = animation.FuncAnimation(
         fig,
         update,
-        frames=frames,
+        frames=frame_count,
         interval=args.interval,
         blit=False,
     )
