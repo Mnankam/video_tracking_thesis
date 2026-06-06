@@ -17,7 +17,7 @@ enable_inner_pipe: true
 enable_optical_flow: true
 enable_optical_box: false
 
-save_debug_frames: false
+save_debug_frames: true
 
 debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/debug
 
