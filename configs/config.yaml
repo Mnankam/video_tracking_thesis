@@ -30,15 +30,15 @@ device: cpu
 # Optical Flow Punkte
 # =========================================================
 optical_flow_points:
-  # innere Rohrkante / sichtbare helle Reflexionskante
-  - [190, 356]
-  - [350, 356]
-  - [520, 356]
+  # inneres Rohr / sichtbare helle Linie
+  - [520, 355]
+  - [700, 355]
+  - [900, 355]
 
-  # Bettkante / horizontale Bettstruktur
-  - [190, 397]
-  - [350, 397]
-  - [520, 397]
+  # Bettkante / horizontale Grenze
+  - [520, 405]
+  - [700, 405]
+  - [900, 405]
 
 # =========================================================
 # ROI Definitionen
