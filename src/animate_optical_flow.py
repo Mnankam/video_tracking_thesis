@@ -3,25 +3,22 @@ import os
 
 import cv2
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Animate Optical Flow points")
-    parser.add_argument("--video", required=True, help="Pfad zum Video")
-    parser.add_argument("--csv", required=True, help="Optical-Flow-CSV")
-    parser.add_argument("--out", required=True, help="Ausgabe-MP4")
+    parser = argparse.ArgumentParser(description="Matplotlib animation for Optical Flow")
+    parser.add_argument("--video", required=True)
+    parser.add_argument("--csv", required=True)
+    parser.add_argument("--out", required=True)
     parser.add_argument("--start-frame", type=int, default=0)
     parser.add_argument("--end-frame", type=int, default=None)
-    parser.add_argument("--trail-length", type=int, default=30)
-    parser.add_argument("--point-radius", type=int, default=6)
+    parser.add_argument("--interval", type=int, default=20)
+    parser.add_argument("--point-size", type=int, default=25)
     args = parser.parse_args()
 
     df = pd.read_csv(args.csv)
-
-    required_cols = {"frame", "point_id", "x", "y"}
-    missing = required_cols - set(df.columns)
-    if missing:
-        raise ValueError(f"Fehlende Spalten in CSV: {missing}")
 
     if "tracking_status" in df.columns:
         df = df[df["tracking_status"] == 1].copy()
@@ -30,92 +27,60 @@ def main():
     if not cap.isOpened():
         raise RuntimeError(f"Video konnte nicht geöffnet werden: {args.video}")
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
     end_frame = args.end_frame if args.end_frame is not None else total
     end_frame = min(end_frame, total)
 
-    cap.set(cv2.CAP_PROP_POS_FRAMES, args.start_frame)
-
-    ok, frame = cap.read()
-    if not ok:
-        raise RuntimeError("Erster Frame konnte nicht gelesen werden.")
-
-    h, w = frame.shape[:2]
+    frames = list(range(args.start_frame, end_frame))
 
     out_dir = os.path.dirname(args.out)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    writer = cv2.VideoWriter(
-        args.out,
-        cv2.VideoWriter_fourcc(*"mp4v"),
-        fps if fps > 0 else 30,
-        (w, h),
-    )
+    def read_gray_frame(frame_idx):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        ok, frame = cap.read()
+        if not ok:
+            raise RuntimeError(f"Frame konnte nicht gelesen werden: {frame_idx}")
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return gray
 
-    frame_idx = args.start_frame
+    first = read_gray_frame(args.start_frame)
 
-    while frame_idx < end_frame:
-        if frame_idx != args.start_frame:
-            ok, frame = cap.read()
-            if not ok:
-                break
+    fig, ax = plt.subplots(figsize=(15, 5))
+    img = ax.imshow(first, cmap="gray")
+    scat = ax.scatter([], [], c="r", s=args.point_size, marker=".")
 
-        # aktuelle Punkte
+    ax.set_title("Optical Flow Tracking Points")
+    ax.set_xlabel("x [px]")
+    ax.set_ylabel("y [px]")
+
+    def update(frame_idx):
+        gray = read_gray_frame(frame_idx)
+        img.set_data(gray)
+
         frame_points = df[df["frame"] == frame_idx]
 
-        # Bewegungsspur pro Punkt
-        history = df[(df["frame"] <= frame_idx) & (df["frame"] > frame_idx - args.trail_length)]
+        if len(frame_points) > 0:
+            xy = frame_points[["x", "y"]].values
+            scat.set_offsets(xy)
+        else:
+            scat.set_offsets([])
 
-        for pid in sorted(history["point_id"].unique()):
-            hdf = history[history["point_id"] == pid]
-            pts = hdf[["x", "y"]].values.astype(int)
+        ax.set_title(f"Optical Flow Tracking Points - Frame {frame_idx}")
+        return img, scat
 
-            for j in range(1, len(pts)):
-                cv2.line(
-                    frame,
-                    tuple(pts[j - 1]),
-                    tuple(pts[j]),
-                    (0, 0, 255),
-                    1,
-                    cv2.LINE_AA,
-                )
+    ani = animation.FuncAnimation(
+        fig,
+        update,
+        frames=frames,
+        interval=args.interval,
+        blit=False,
+    )
 
-        for _, row in frame_points.iterrows():
-            x = int(row["x"])
-            y = int(row["y"])
-            point_id = int(row["point_id"])
-
-            cv2.circle(frame, (x, y), args.point_radius, (0, 0, 255), -1)
-            cv2.putText(
-                frame,
-                f"id={point_id}",
-                (x + 8, y - 8),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 0, 255),
-                1,
-                cv2.LINE_AA,
-            )
-
-        cv2.putText(
-            frame,
-            f"Frame: {frame_idx}",
-            (20, 35),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            (0, 0, 255),
-            2,
-            cv2.LINE_AA,
-        )
-
-        writer.write(frame)
-        frame_idx += 1
-
+    ani.save(args.out)
     cap.release()
-    writer.release()
+    plt.close(fig)
 
     print(f"Animation gespeichert: {args.out}")
 
