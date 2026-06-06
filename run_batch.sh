@@ -22,13 +22,14 @@ for video in "$DATA"/*.MP4; do
     OPTICAL_FLOW_ANIMATION="$OUT/${name}_optical_flow_animation.mp4"
     DEBUG_OUT="$OUT/debug_${name}"
     OPTICAL_FLOW_PLOT_DIR="$OUT/plots_${name}"
+    OPTICAL_FLOW_ANALYSIS_DIR="$OUT/analysis_${name}"
 
     echo "======================================"
     echo "Processing: $name"
     echo "Video: $video"
     echo "======================================"
 
-    mkdir -p "$DEBUG_OUT" "$OPTICAL_FLOW_PLOT_DIR"
+    mkdir -p "$DEBUG_OUT" "$OPTICAL_FLOW_PLOT_DIR" "$OPTICAL_FLOW_ANALYSIS_DIR"
 
     sed "s|^video_path:.*|video_path: $video|; \
          s|^output_csv:.*|output_csv: $RESULTS_OUT|; \
@@ -89,6 +90,21 @@ for video in "$DATA"/*.MP4; do
         echo "$OUT/logs/${name}_optical_flow_plot.log"
     fi
 
+    echo "Running optical flow analysis..."
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.analyse_optical_flow \
+            --csv "$OPTICAL_FLOW_OUT" \
+            --out-dir "$OPTICAL_FLOW_ANALYSIS_DIR" \
+        > "$OUT/logs/${name}_optical_flow_analysis.log" 2>&1; then
+        echo "Optical flow analysis finished: $name"
+    else
+        echo "Optical flow analysis failed for $name. Check log:"
+        echo "$OUT/logs/${name}_optical_flow_analysis.log"
+    fi
+
     echo "Running optical flow animation..."
     if apptainer exec \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
@@ -98,8 +114,8 @@ for video in "$DATA"/*.MP4; do
             --video "$video" \
             --csv "$OPTICAL_FLOW_OUT" \
             --out "$OPTICAL_FLOW_ANIMATION" \
-            --start-frame 0 \
-            --end-frame 100000 \
+            --start-frame 1 \
+            --end-frame 500 \
         > "$OUT/logs/${name}_optical_flow_animation.log" 2>&1; then
         echo "Optical flow animation finished: $name"
     else
