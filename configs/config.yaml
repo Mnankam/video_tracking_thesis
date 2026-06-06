@@ -17,7 +17,7 @@ enable_inner_pipe: true
 enable_optical_flow: true
 enable_optical_box: false
 
-save_debug_frames: true
+save_debug_frames: false
 
 debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/debug
 
@@ -30,24 +30,26 @@ device: cpu
 # Optical Flow Punkte
 # =========================================================
 optical_flow_points:
-  - [180, 365]
-  - [350, 365]
-  - [520, 365]
+  # innere Rohrkante / sichtbare helle Reflexionskante
+  - [190, 356]
+  - [350, 356]
+  - [520, 356]
 
-  - [180, 406]
-  - [350, 406]
-  - [520, 406]
+  # Bettkante / horizontale Bettstruktur
+  - [190, 397]
+  - [350, 397]
+  - [520, 397]
 
 # =========================================================
 # ROI Definitionen
 # =========================================================
 pipe_roi: [40, 330, 1140, 60]
 
-inner_pipe_roi: [135, 364, 620, 16]
+inner_pipe_roi: [135, 352, 620, 22]
 
-bed_edge_roi: [135, 398, 620, 12]
+bed_edge_roi: [135, 392, 620, 18]
 
-bed_roi: [135, 406, 620, 26]
+bed_roi: [135, 398, 620, 36]
 
 optical_box_roi: [220, 300, 950, 185]
 
