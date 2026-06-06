@@ -30,7 +30,6 @@ device: cpu
 # Optical Flow Punkte
 # =========================================================
 optical_flow_points:
-  optical_flow_points:
   # innere Rohrstruktur / sichtbare dunkle Kante
   - [890, 375]
   - [990, 375]
