@@ -17,6 +17,8 @@ def main():
     parser.add_argument("--end-frame", type=int, default=None)
     parser.add_argument("--interval", type=int, default=20)
     parser.add_argument("--point-size", type=int, default=25)
+    parser.add_argument("--fps", type=int, default=50)
+    parser.add_argument("--bitrate", type=int, default=1800)
     args = parser.parse_args()
 
     df = pd.read_csv(args.csv)
@@ -84,7 +86,12 @@ def main():
     if args.out.lower().endswith(".gif"):
         ani.save(args.out, writer="pillow")
     else:
-        ani.save(args.out, writer="ffmpeg")
+        writer = animation.FFMpegWriter(
+            fps=args.fps,
+            codec="mpeg4",
+            bitrate=args.bitrate,
+        )
+        ani.save(args.out, writer=writer)
 
     cap.release()
     plt.close(fig)
