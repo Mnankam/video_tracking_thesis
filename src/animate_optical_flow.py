@@ -2,6 +2,7 @@ import argparse
 import os
 
 import cv2
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -32,6 +33,8 @@ def main():
     end_frame = min(end_frame, total)
 
     frames = list(range(args.start_frame, end_frame))
+    if len(frames) == 0:
+        raise ValueError("Keine Frames für Animation ausgewählt.")
 
     out_dir = os.path.dirname(args.out)
     if out_dir:
@@ -65,7 +68,7 @@ def main():
             xy = frame_points[["x", "y"]].values
             scat.set_offsets(xy)
         else:
-            scat.set_offsets([])
+            scat.set_offsets(np.empty((0, 2)))
 
         ax.set_title(f"Optical Flow Tracking Points - Frame {frame_idx}")
         return img, scat
@@ -78,7 +81,11 @@ def main():
         blit=False,
     )
 
-    ani.save(args.out)
+    if args.out.lower().endswith(".gif"):
+        ani.save(args.out, writer="pillow")
+    else:
+        ani.save(args.out, writer="ffmpeg")
+
     cap.release()
     plt.close(fig)
 
