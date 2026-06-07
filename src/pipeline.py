@@ -75,7 +75,7 @@ class PipelineConfig:
     deflicker_use_second_harmonic: bool = False
     deflicker_window_size: int = 256
     deflicker_min_history: int = 32
-    deflicker_smooth_alpha: float = 0.2
+    deflicker_smooth_alpha: float = 0.4
     deflicker_use_median: bool = True
     deflicker_roi: Optional[list[int]] = None
 
