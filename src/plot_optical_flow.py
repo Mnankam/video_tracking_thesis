@@ -114,7 +114,7 @@ def main():
         plt.plot(d["frame"], d["dx"], label=f"point {pid}")
 
     plt.xlabel("Frame")
-    plty.label("dx [px/frame]")
+    plt.ylabel("dx [px/frame]")
     plt.title("Optical Flow: horizontal displacement")
 
     plt.grid(True)
