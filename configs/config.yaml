@@ -5,7 +5,7 @@ output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/o
 optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/optical_flow.csv
 
 start_frame: 0
-end_frame: 100000
+end_frame: 1000
 
 resize_width: 1280
 resize_height: 720
@@ -32,25 +32,25 @@ device: cpu
 optical_flow_points:
 
   # obere Rohrkante
-  - [760, 392]
-  - [980, 392]
-  - [1180, 392]
+  - [760, 375]
+  - [820, 375]
+  - [880, 375]
 
   # Bettkante
-  - [760, 430]
-  - [980, 430]
-  - [1180, 430]
+  - [760, 405]
+  - [820, 405]
+  - [880, 405]
 
 # =========================================================
 # ROI Definitionen
 # =========================================================
 pipe_roi: [40, 330, 1140, 60]
 
-inner_pipe_roi: [650, 360, 650, 60]
+inner_pipe_roi: [700, 350, 420, 40]
 
-bed_edge_roi: [650, 410, 650, 50]
+bed_edge_roi: [700, 390, 420, 40]
 
-bed_roi: [650, 400, 650, 70]
+bed_roi: [700, 400, 420, 60]
 
 optical_box_roi: [220, 300, 950, 185]
 
