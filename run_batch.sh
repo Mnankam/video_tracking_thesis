@@ -110,7 +110,7 @@ for video in "$DATA"/*.MP4; do
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
         -B "$PROJECT":"$PROJECT" \
         "$CONTAINER" \
-        python -m src.animate_optical_flow \
+        python -m src.animate_optical_flow_cv \
             --video "$video" \
             --csv "$OPTICAL_FLOW_OUT" \
             --out "$OPTICAL_FLOW_ANIMATION" \
