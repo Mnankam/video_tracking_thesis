@@ -19,7 +19,7 @@ for video in "$DATA"/*.MP4; do
     RESULTS_OUT="$OUT/${name}_results.csv"
     SUMMARY_OUT="$OUT/${name}_summary.csv"
     OPTICAL_FLOW_OUT="$OUT/${name}_optical_flow.csv"
-    OPTICAL_FLOW_ANIMATION="$OUT/${name}_optical_flow_animation.mp4"
+    OPTICAL_FLOW_ANIMATION="$OUT/${name}_optical_flow_animation.avi"
     DEBUG_OUT="$OUT/debug_${name}"
     OPTICAL_FLOW_PLOT_DIR="$OUT/plots_${name}"
     OPTICAL_FLOW_ANALYSIS_DIR="$OUT/analysis_${name}"
