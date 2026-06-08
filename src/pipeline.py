@@ -253,6 +253,38 @@ class VideoPipeline:
                 cv2.LINE_AA,
             )
 
+    def _select_particle_bed_detection(self, detections):
+        """
+        Liefert die beste Particle-Bed-Detection.
+
+        Für segmentation_mode == bed_cv werden alle normalen Detections
+        als Particle-Bed-Kandidaten interpretiert.
+
+        Für detectron2 werden Labels wie bed / particle_bed berücksichtigt,
+        falls diese Labels im Detection-Dict vorhanden sind.
+        """
+        if not detections:
+            return None
+
+        candidates = []
+
+        for det in detections:
+            label = str(det.get("label", "")).lower()
+
+            if self.config.segmentation_mode == "bed_cv":
+                candidates.append(det)
+
+            elif label in ["bed", "particle_bed", "particle bed"]:
+                candidates.append(det)
+
+            elif "bed" in label:
+                candidates.append(det)
+
+        if not candidates:
+            return None
+
+        return max(candidates, key=lambda d: d.get("area", 0.0))
+
     def _write_debug_frame(
         self,
         frame_idx: int,
@@ -263,6 +295,7 @@ class VideoPipeline:
         bed_edge_y_smooth=None,
         inner_pipe_detections=None,
         optical_box_detections=None,
+        particle_bed_detection=None,
     ) -> None:
         vis = frame.copy()
 
@@ -291,6 +324,22 @@ class VideoPipeline:
 
         self._draw_detections(vis, inner_pipe_detections, (255, 255, 0), "inner_pipe")
         self._draw_detections(vis, optical_box_detections, (255, 0, 255), "optical_box")
+
+        if particle_bed_detection is not None:
+            x, y, w, h = particle_bed_detection["bbox"]
+            cx, cy = particle_bed_detection["center"]
+            cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 165, 255), 2)
+            cv2.circle(vis, (int(cx), int(cy)), 5, (0, 165, 255), -1)
+            cv2.putText(
+                vis,
+                "particle_bed",
+                (x, max(20, y - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (0, 165, 255),
+                2,
+                cv2.LINE_AA,
+            )
 
         if bed_edge_y_raw is not None:
             cv2.line(
@@ -377,6 +426,13 @@ class VideoPipeline:
                     "area",
                     "bed_edge_y_raw",
                     "bed_edge_y_smooth",
+                    "particle_bed_x",
+                    "particle_bed_y",
+                    "particle_bed_w",
+                    "particle_bed_h",
+                    "particle_bed_center_x",
+                    "particle_bed_center_y",
+                    "particle_bed_area",
                     "inner_pipe_x",
                     "inner_pipe_y",
                     "inner_pipe_w",
@@ -416,6 +472,17 @@ class VideoPipeline:
 
                 mask, detections = self.segmenter.segment(frame)
                 debug_mask = mask.copy()
+
+                particle_bed_detection = self._select_particle_bed_detection(detections)
+
+                if particle_bed_detection is not None:
+                    pb_x, pb_y, pb_w, pb_h = particle_bed_detection["bbox"]
+                    pb_cx, pb_cy = particle_bed_detection["center"]
+                    pb_area = particle_bed_detection.get("area", np.nan)
+                else:
+                    pb_x = pb_y = pb_w = pb_h = ""
+                    pb_cx = pb_cy = ""
+                    pb_area = ""
 
                 inner_pipe_detections = []
                 if self.inner_pipe_segmenter is not None:
@@ -502,6 +569,13 @@ class VideoPipeline:
                             round(bed_edge_y_smooth, 3)
                             if bed_edge_y_smooth is not None
                             else "",
+                            pb_x,
+                            pb_y,
+                            pb_w,
+                            pb_h,
+                            round(pb_cx, 3) if pb_cx != "" else "",
+                            round(pb_cy, 3) if pb_cy != "" else "",
+                            round(pb_area, 3) if pb_area != "" else "",
                             ip_x,
                             ip_y,
                             ip_w,
@@ -528,6 +602,7 @@ class VideoPipeline:
                         bed_edge_y_smooth=bed_edge_y_smooth,
                         inner_pipe_detections=inner_pipe_detections,
                         optical_box_detections=optical_box_detections,
+                        particle_bed_detection=particle_bed_detection,
                     )
 
                 processed_frames += 1
@@ -604,7 +679,7 @@ def load_config(path: str) -> PipelineConfig:
         ),
         deflicker_window_size=data.get("deflicker_window_size", 256),
         deflicker_min_history=data.get("deflicker_min_history", 32),
-        deflicker_smooth_alpha=data.get("deflicker_smooth_alpha", 0.2),
+        deflicker_smooth_alpha=data.get("deflicker_smooth_alpha", 0.4),
         deflicker_use_median=data.get("deflicker_use_median", True),
         deflicker_roi=data.get("deflicker_roi"),
     )
