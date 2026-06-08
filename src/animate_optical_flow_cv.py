@@ -57,7 +57,7 @@ def main():
 
     writer = cv2.VideoWriter(
         args.out,
-        cv2.VideoWriter_fourcc(*"mp4v"),
+        cv2.VideoWriter_fourcc(*"MJPG"),
         out_fps,
         (width, height),
     )
