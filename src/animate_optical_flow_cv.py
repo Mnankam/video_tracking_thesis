@@ -6,6 +6,94 @@ import numpy as np
 import pandas as pd
 
 
+def draw_axes(vis, width, height, tick_step=200):
+    axis_color = (255, 255, 255)
+    text_color = (255, 255, 255)
+
+    # Hintergrund leicht abdunkeln für bessere Lesbarkeit
+    overlay = vis.copy()
+    cv2.rectangle(overlay, (0, 0), (width, 70), (0, 0, 0), -1)
+    cv2.rectangle(overlay, (0, height - 45), (width, height), (0, 0, 0), -1)
+    cv2.rectangle(overlay, (0, 0), (80, height), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.35, vis, 0.65, 0, vis)
+
+    # x-Achse unten
+    y_axis_pos = height - 35
+    cv2.line(vis, (80, y_axis_pos), (width - 20, y_axis_pos), axis_color, 1)
+
+    for x in range(0, width + 1, tick_step):
+        if x < 80:
+            continue
+
+        cv2.line(
+            vis,
+            (x, y_axis_pos - 6),
+            (x, y_axis_pos + 6),
+            axis_color,
+            1,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            vis,
+            str(x),
+            (x - 20, y_axis_pos + 25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            text_color,
+            1,
+            cv2.LINE_AA,
+        )
+
+    cv2.putText(
+        vis,
+        "x [px]",
+        (width // 2 - 40, height - 5),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        text_color,
+        1,
+        cv2.LINE_AA,
+    )
+
+    # y-Achse links
+    x_axis_pos = 70
+    cv2.line(vis, (x_axis_pos, 20), (x_axis_pos, height - 45), axis_color, 1)
+
+    for y in range(0, height + 1, tick_step):
+        if y > height - 45:
+            continue
+
+        cv2.line(
+            vis,
+            (x_axis_pos - 6, y),
+            (x_axis_pos + 6, y),
+            axis_color,
+            1,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            vis,
+            str(y),
+            (10, y + 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            text_color,
+            1,
+            cv2.LINE_AA,
+        )
+
+    cv2.putText(
+        vis,
+        "y [px]",
+        (10, 45),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        text_color,
+        1,
+        cv2.LINE_AA,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fast OpenCV animation for Optical Flow")
     parser.add_argument("--video", required=True)
@@ -16,6 +104,7 @@ def main():
     parser.add_argument("--point-radius", type=int, default=5)
     parser.add_argument("--trail-length", type=int, default=20)
     parser.add_argument("--fps", type=float, default=None)
+    parser.add_argument("--tick-step", type=int, default=200)
     args = parser.parse_args()
 
     df = pd.read_csv(args.csv)
@@ -71,11 +160,16 @@ def main():
         if frame_idx != start_frame:
             ok, frame = cap.read()
             if not ok:
-                print(f"Warnung: Frame {frame_idx} konnte nicht gelesen werden. Stoppe Animation.")
+                print(
+                    f"Warnung: Frame {frame_idx} konnte nicht gelesen werden. "
+                    "Stoppe Animation."
+                )
                 break
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         vis = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+
+        draw_axes(vis, width, height, tick_step=args.tick_step)
 
         # Bewegungsspur
         history = df[
@@ -119,10 +213,10 @@ def main():
 
         cv2.putText(
             vis,
-            f"Optical Flow Tracking - Frame {frame_idx}",
-            (30, 40),
+            f"Optical Flow Tracking Points - Frame {frame_idx}",
+            (90, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1.0,
+            0.9,
             (0, 0, 255),
             2,
             cv2.LINE_AA,
