@@ -5,7 +5,7 @@ output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/o
 optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/optical_flow.csv
 
 start_frame: 0
-end_frame: 1000
+end_frame: 500
 
 resize_width: 1280
 resize_height: 720
@@ -31,10 +31,10 @@ device: cpu
 # =========================================================
 optical_flow_points:
 
- # stabile Kante / Reflexionslinie am Rohr
-  - [720, 365]
-  - [850, 365]
-  - [980, 365]
+# mögliche innere Rohrkante / sichtbare horizontale Struktur
+  - [850, 390]
+  - [980, 390]
+  - [1050, 390]
 
   # Bettkante / klarer Übergang
   - [720, 422]
@@ -44,14 +44,10 @@ optical_flow_points:
 # =========================================================
 # ROI Definitionen
 # =========================================================
-pipe_roi: [650, 340, 500, 100]
-
-inner_pipe_roi: [650, 345, 500, 55]
-
+pipe_roi: [650, 340, 500, 110]
+inner_pipe_roi: [650, 365, 500, 60]
 bed_edge_roi: [650, 390, 500, 35]
-
 bed_roi: [650, 415, 500, 60]
-
 optical_box_roi: [650, 330, 500, 140]
 
 # =========================================================
