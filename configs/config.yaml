@@ -31,10 +31,10 @@ device: cpu
 # =========================================================
 optical_flow_points:
 
-# mögliche innere Rohrkante / sichtbare horizontale Struktur
-  - [850, 390]
-  - [980, 390]
-  - [1050, 390]
+# sichtbare Rohrkante / stabile Reflexionslinie
+  - [760, 385]
+  - [880, 385]
+  - [1000, 385]
 
   # Bettkante / klarer Übergang
   - [720, 422]
@@ -45,7 +45,7 @@ optical_flow_points:
 # ROI Definitionen
 # =========================================================
 pipe_roi: [650, 340, 500, 110]
-inner_pipe_roi: [650, 365, 500, 60]
+inner_pipe_roi: [650, 350, 500, 40]
 bed_edge_roi: [650, 390, 500, 35]
 bed_roi: [650, 415, 500, 60]
 optical_box_roi: [650, 330, 500, 140]
