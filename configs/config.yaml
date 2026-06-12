@@ -32,9 +32,9 @@ device: cpu
 optical_flow_points:
 
 # sichtbare Rohrkante / stabile Reflexionslinie
-  - #[760, 385]
-  - #[880, 385]
-  - #[1000, 385]
+#  - [760, 385]
+#  - [880, 385]
+#  - [1000, 385]
 
   # Bettkante / klarer Übergang
   - [720, 422]
