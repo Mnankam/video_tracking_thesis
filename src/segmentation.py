@@ -122,7 +122,6 @@ def filter_contours(
 
     return valid
 
-
 class InnerPipeSegmenter:
     def __init__(
         self,
@@ -146,6 +145,7 @@ class InnerPipeSegmenter:
 
     def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
+
         gray = convert_color(roi_frame, self.color_mode)
 
         if self.blur_kernel is not None:
@@ -154,62 +154,51 @@ class InnerPipeSegmenter:
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         gray_eq = clahe.apply(gray)
 
-        sobel_y = cv2.Sobel(gray_eq, cv2.CV_32F, 0, 1, ksize=3)
-        score = np.abs(sobel_y).mean(axis=1)
-
-        score = cv2.GaussianBlur(
-            score.reshape(-1, 1).astype(np.float32),
-            (1, 9),
+        # Helle Reflexions-/Rohrstruktur innerhalb ROI segmentieren
+        _, mask = cv2.threshold(
+            gray_eq,
             0,
-        ).ravel()
+            255,
+            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+        )
 
-        roi_h, roi_w = gray.shape[:2]
-        mask = np.zeros_like(gray, dtype=np.uint8)
+        kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 5))
+        kernel_open = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 3))
+
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close, iterations=2)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_open, iterations=1)
+
+        contours, _ = cv2.findContours(
+            mask,
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE,
+        )
+
+        contours = filter_contours(
+            contours,
+            min_area=self.min_area,
+            min_aspect_ratio=3.0,
+            min_width=100,
+            min_height=5,
+            max_height=70,
+        )
+
         detections = []
 
-        if roi_h >= 20 and roi_w >= 100:
-            min_h = 18
-            max_h = min(60, roi_h - 1)
-
-            best_score = -1
-            best_pair = None
-
-            for y1 in range(2, roi_h - min_h):
-                for y2 in range(y1 + min_h, min(y1 + max_h, roi_h - 2)):
-                    s = score[y1] + score[y2]
-                    if s > best_score:
-                        best_score = s
-                        best_pair = (y1, y2)
-
-            if best_pair is not None:
-                y1, y2 = best_pair
-
-                cv2.rectangle(
-                    mask,
-                    (0, y1),
-                    (roi_w - 1, y2),
-                    255,
-                    thickness=-1,
+        if contours:
+            best = max(contours, key=cv2.contourArea)
+            detections.append(
+                contour_to_detection(
+                    best,
+                    x_offset,
+                    y_offset,
+                    "inner_pipe",
                 )
+            )
 
-                contour = np.array(
-                    [
-                        [[0, y1]],
-                        [[roi_w - 1, y1]],
-                        [[roi_w - 1, y2]],
-                        [[0, y2]],
-                    ],
-                    dtype=np.int32,
-                )
-
-                detections.append(
-                    contour_to_detection(
-                        contour,
-                        x_offset,
-                        y_offset,
-                        "inner_pipe",
-                    )
-                )
+            clean = np.zeros_like(mask)
+            cv2.drawContours(clean, [best], -1, 255, thickness=-1)
+            mask = clean
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
@@ -298,34 +287,29 @@ class BedSegmenterCV:
         self.threshold_mode = threshold_mode
         self.invert = invert
 
-    def _threshold(self, gray):
-        if self.threshold_mode == "adaptive":
-            return cv2.adaptiveThreshold(
-                gray,
-                255,
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY_INV,
-                31,
-                3,
-            )
-
-        thresh_type = cv2.THRESH_BINARY_INV if self.invert else cv2.THRESH_BINARY
-        _, mask = cv2.threshold(gray, 0, 255, thresh_type + cv2.THRESH_OTSU)
-        return mask
-
     def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
-        gray = convert_color(roi_frame, self.color_mode)
+
+        hsv = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2HSV)
+        v = hsv[:, :, 2]
 
         if self.blur_kernel is not None:
-            gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
+            v = cv2.GaussianBlur(v, self.blur_kernel, 0)
 
-        mask = self._threshold(gray)
+        # HSV → V channel → threshold
+        _, mask = cv2.threshold(
+            v,
+            0,
+            255,
+            cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU,
+        )
 
-        if self.use_morphology:
-            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
+        # morphology close
+        kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 7))
+        kernel_open = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 3))
+
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close, iterations=2)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_open, iterations=1)
 
         contours, _ = cv2.findContours(
             mask,
@@ -339,13 +323,15 @@ class BedSegmenterCV:
             min_aspect_ratio=2.0,
             min_width=80,
             min_height=5,
-            max_height=80,
+            max_height=90,
         )
 
         detections = []
 
         if contours:
+            # largest contour
             best = max(contours, key=cv2.contourArea)
+
             detections.append(
                 contour_to_detection(
                     best,
@@ -354,6 +340,10 @@ class BedSegmenterCV:
                     "particle_bed",
                 )
             )
+
+            clean = np.zeros_like(mask)
+            cv2.drawContours(clean, [best], -1, 255, thickness=-1)
+            mask = clean
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
