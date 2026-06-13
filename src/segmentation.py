@@ -127,13 +127,13 @@ class InnerPipeSegmenter:
     def __init__(
         self,
         min_area: float = 120.0,
-        blur_kernel: Tuple[int, int] = (3, 3),
-        canny_low: int = 20,
-        canny_high: int = 90,
+        blur_kernel: Tuple[int, int] = (5, 5),
+        canny_low: int = 12,
+        canny_high: int = 60,
         morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
-        min_aspect_ratio: float = 8.0,
+        min_aspect_ratio: float = 4.0,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -151,36 +151,68 @@ class InnerPipeSegmenter:
         if self.blur_kernel is not None:
             gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
-        edges = cv2.Canny(gray, self.canny_low, self.canny_high)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray_eq = clahe.apply(gray)
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 2))
-        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
+        sobel_y = cv2.Sobel(gray_eq, cv2.CV_32F, 0, 1, ksize=3)
+        score = np.abs(sobel_y).mean(axis=1)
 
-        contours, _ = cv2.findContours(
-            edges,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE,
-        )
+        score = cv2.GaussianBlur(
+            score.reshape(-1, 1).astype(np.float32),
+            (1, 9),
+            0,
+        ).ravel()
 
-        contours = filter_contours(
-            contours,
-            min_area=self.min_area,
-            min_aspect_ratio=self.min_aspect_ratio,
-            min_width=160,
-            max_height=12,
-        )
-
+        roi_h, roi_w = gray.shape[:2]
+        mask = np.zeros_like(gray, dtype=np.uint8)
         detections = []
 
-        if contours:
-            best = max(contours, key=cv2.contourArea)
-            detections.append(
-                contour_to_detection(best, x_offset, y_offset, "inner_pipe")
-            )
+        if roi_h >= 20 and roi_w >= 100:
+            min_h = 18
+            max_h = min(60, roi_h - 1)
 
-        full_mask = make_full_mask(frame, edges, x_offset, y_offset)
+            best_score = -1
+            best_pair = None
+
+            for y1 in range(2, roi_h - min_h):
+                for y2 in range(y1 + min_h, min(y1 + max_h, roi_h - 2)):
+                    s = score[y1] + score[y2]
+                    if s > best_score:
+                        best_score = s
+                        best_pair = (y1, y2)
+
+            if best_pair is not None:
+                y1, y2 = best_pair
+
+                cv2.rectangle(
+                    mask,
+                    (0, y1),
+                    (roi_w - 1, y2),
+                    255,
+                    thickness=-1,
+                )
+
+                contour = np.array(
+                    [
+                        [[0, y1]],
+                        [[roi_w - 1, y1]],
+                        [[roi_w - 1, y2]],
+                        [[0, y2]],
+                    ],
+                    dtype=np.int32,
+                )
+
+                detections.append(
+                    contour_to_detection(
+                        contour,
+                        x_offset,
+                        y_offset,
+                        "inner_pipe",
+                    )
+                )
+
+        full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
-
 
 class PipeSegmenterCV:
     def __init__(
@@ -251,7 +283,7 @@ class BedSegmenterCV:
         min_area: float = 80.0,
         blur_kernel: Tuple[int, int] = (3, 3),
         use_morphology: bool = True,
-        morphology_kernel_size: int = 3,
+        morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "hsv_v",
         threshold_mode: str = "adaptive",
@@ -273,22 +305,16 @@ class BedSegmenterCV:
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
-                21,
-                2,
+                31,
+                3,
             )
 
         thresh_type = cv2.THRESH_BINARY_INV if self.invert else cv2.THRESH_BINARY
-        _, mask = cv2.threshold(
-            gray,
-            0,
-            255,
-            thresh_type + cv2.THRESH_OTSU,
-        )
+        _, mask = cv2.threshold(gray, 0, 255, thresh_type + cv2.THRESH_OTSU)
         return mask
 
     def segment(self, frame):
         roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
-
         gray = convert_color(roi_frame, self.color_mode)
 
         if self.blur_kernel is not None:
@@ -297,13 +323,9 @@ class BedSegmenterCV:
         mask = self._threshold(gray)
 
         if self.use_morphology:
-            mask = clean_mask(
-                mask,
-                kernel_size=self.morphology_kernel_size,
-                open_iter=1,
-                close_iter=1,
-                horizontal=True,
-            )
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
 
         contours, _ = cv2.findContours(
             mask,
@@ -314,20 +336,28 @@ class BedSegmenterCV:
         contours = filter_contours(
             contours,
             min_area=self.min_area,
-            min_aspect_ratio=1.2,
-            min_width=20,
-            max_height=60,
+            min_aspect_ratio=2.0,
+            min_width=80,
+            min_height=5,
+            max_height=80,
         )
 
-        detections = [
-            contour_to_detection(c, x_offset, y_offset, "particle_bed")
-            for c in contours
-        ]
+        detections = []
+
+        if contours:
+            best = max(contours, key=cv2.contourArea)
+            detections.append(
+                contour_to_detection(
+                    best,
+                    x_offset,
+                    y_offset,
+                    "particle_bed",
+                )
+            )
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
-
-
+    
 class OpticalBoxSegmenter:
     def __init__(
         self,
