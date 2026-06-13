@@ -30,13 +30,12 @@ device: cpu
 # Optical Flow Punkte
 # =========================================================
 optical_flow_points:
+  # innere Rohr-/Reflexionsstruktur
+  - [760, 385]
+  - [880, 385]
+  - [1000, 385]
 
-# sichtbare Rohrkante / stabile Reflexionslinie
-#  - [760, 385]
-#  - [880, 385]
-#  - [1000, 385]
-
-  # Bettkante / klarer Übergang
+  # Bettkante / Partikelbett-Oberkante
   - [760, 410]
   - [910, 405]
   - [1030, 400]
@@ -45,9 +44,9 @@ optical_flow_points:
 # ROI Definitionen
 # =========================================================
 pipe_roi: [650, 340, 500, 110]
-inner_pipe_roi: [650, 375, 500, 20]
+inner_pipe_roi: [650, 330, 500, 75]
+bed_roi: [650, 410, 500, 70]
 bed_edge_roi: [650, 390, 500, 35]
-bed_roi: [650, 415, 500, 60]
 optical_box_roi: [650, 330, 500, 140]
 
 # =========================================================
