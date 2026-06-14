@@ -74,11 +74,11 @@ def main():
     rows = []
 
     lk_params = dict(
-        winSize=(21, 21),
+        winSize=(31, 31),
         maxLevel=3,
         criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-            30,
+            20,
             0.01,
         ),
     )
