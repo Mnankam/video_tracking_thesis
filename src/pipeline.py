@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 import cv2
 import yaml
 import numpy as np
+import argparse
 
 from src.deflicker import FFTDeflicker
 from src.segmentation import (
