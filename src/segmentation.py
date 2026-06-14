@@ -182,8 +182,14 @@ class InnerPipeSegmenter:
 
             x, y, w, h = cv2.boundingRect(cnt)
             aspect_ratio = w / max(h, 1)
+            center_y = y + h / 2.0
 
-            if aspect_ratio > 3.0 and w >= 80 and 5 <= h <= 70:
+            if (
+                aspect_ratio > 3.0
+                and 15 < center_y < 50
+                and w > 120
+                and 5 <= h <= 70
+            ):
                 candidates.append(cnt)
 
         detections = []
@@ -207,7 +213,7 @@ class InnerPipeSegmenter:
             mask = np.zeros_like(mask)
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
-        return full_mask, detections 
+        return full_mask, detections
 
 class PipeSegmenterCV:
     def __init__(
@@ -281,7 +287,7 @@ class BedSegmenterCV:
         morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "hsv_v",
-        threshold_mode: str = "fixed",
+        threshold_mode: str = "otsu",
         invert: bool = False,
     ) -> None:
         self.min_area = min_area
@@ -302,11 +308,14 @@ class BedSegmenterCV:
         if self.blur_kernel is not None:
             v_channel = cv2.GaussianBlur(v_channel, self.blur_kernel, 0)
 
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        v_channel = clahe.apply(v_channel)
+
         _, mask = cv2.threshold(
             v_channel,
-            135,
+            0,
             255,
-            cv2.THRESH_BINARY,
+            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
         )
 
         kernel = np.ones((5, 5), np.uint8)
@@ -341,7 +350,15 @@ class BedSegmenterCV:
             x, y, w, h = cv2.boundingRect(cnt)
             aspect_ratio = w / max(h, 1)
 
-            if aspect_ratio >= 2.0 and w >= 80 and 5 <= h <= 90:
+            # y_global ist wichtig, weil y innerhalb der ROI liegt
+            y_global = y + y_offset
+
+            if (
+                y_global > 390
+                and aspect_ratio >= 2.0
+                and w >= 80
+                and 5 <= h <= 90
+            ):
                 candidates.append(cnt)
 
         detections = []
