@@ -12,10 +12,44 @@ def load_config(path):
         return yaml.safe_load(f)
 
 
+def snap_points_to_features(gray, points, search_radius=35):
+    snapped = []
+
+    for p in points:
+        x, y = p.ravel()
+        x = int(x)
+        y = int(y)
+
+        h, w = gray.shape[:2]
+
+        x1 = max(0, x - search_radius)
+        y1 = max(0, y - search_radius)
+        x2 = min(w, x + search_radius)
+        y2 = min(h, y + search_radius)
+
+        patch = gray[y1:y2, x1:x2]
+
+        corners = cv2.goodFeaturesToTrack(
+            patch,
+            maxCorners=1,
+            qualityLevel=0.01,
+            minDistance=8,
+            blockSize=7,
+        )
+
+        if corners is not None:
+            cx, cy = corners[0, 0]
+            snapped.append([x1 + cx, y1 + cy])
+        else:
+            snapped.append([x, y])
+
+    return np.array(snapped, dtype=np.float32).reshape(-1, 1, 2)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Optical Flow Tracking")
-    parser.add_argument("--config", required=True, help="Pfad zur config.yaml")
-    parser.add_argument("--output-csv", default=None, help="Ausgabe-CSV")
+    parser.add_argument("--config", required=True)
+    parser.add_argument("--output-csv", default=None)
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -28,7 +62,7 @@ def main():
     output_csv = args.output_csv or config.get("optical_flow_csv")
 
     if output_csv is None:
-        raise ValueError("optical_flow_csv fehlt in config oder --output-csv.")
+        raise ValueError("optical_flow_csv fehlt.")
 
     output_dir = os.path.dirname(output_csv)
     if output_dir:
@@ -69,7 +103,13 @@ def main():
         raise RuntimeError("Erster Frame konnte nicht gelesen werden.")
 
     prev_gray = cv2.cvtColor(first_frame, cv2.COLOR_BGR2GRAY)
-    prev_points = points.copy()
+
+    # Wichtig: Startpunkte auf echte Features in der Umgebung setzen
+    prev_points = snap_points_to_features(
+        prev_gray,
+        points,
+        search_radius=35,
+    )
 
     rows = []
 
@@ -82,6 +122,8 @@ def main():
             0.01,
         ),
     )
+
+    max_jump_px = float(config.get("optical_flow_max_jump_px", 8.0))
 
     frame_idx = start_frame + 1
 
@@ -107,39 +149,34 @@ def main():
         valid_points = prev_points.copy()
 
         for i, (p0, p1, st) in enumerate(zip(prev_points, next_points, status)):
-            if st[0] == 1:
-                x0, y0 = p0.ravel()
-                x1, y1 = p1.ravel()
+            x0, y0 = p0.ravel()
+            x1, y1 = p1.ravel()
 
-                rows.append(
-                    {
-                        "frame": frame_idx,
-                        "time_seconds": frame_idx / video_fps if video_fps > 0 else 0.0,
-                        "point_id": i,
-                        "x": float(x1),
-                        "y": float(y1),
-                        "dx": float(x1 - x0),
-                        "dy": float(y1 - y0),
-                        "tracking_status": int(st[0]),
-                    }
-                )
+            dx = float(x1 - x0)
+            dy = float(y1 - y0)
+            jump = float(np.sqrt(dx * dx + dy * dy))
 
+            tracking_ok = int(st[0] == 1 and jump <= max_jump_px)
+
+            if tracking_ok:
                 valid_points[i] = p1
             else:
-                x0, y0 = p0.ravel()
+                x1, y1 = x0, y0
+                dx, dy = 0.0, 0.0
 
-                rows.append(
-                    {
-                        "frame": frame_idx,
-                        "time_seconds": frame_idx / video_fps if video_fps > 0 else 0.0,
-                        "point_id": i,
-                        "x": float(x0),
-                        "y": float(y0),
-                        "dx": 0.0,
-                        "dy": 0.0,
-                        "tracking_status": 0,
-                    }
-                )
+            rows.append(
+                {
+                    "frame": frame_idx,
+                    "time_seconds": frame_idx / video_fps if video_fps > 0 else 0.0,
+                    "point_id": i,
+                    "x": float(x1),
+                    "y": float(y1),
+                    "dx": dx,
+                    "dy": dy,
+                    "jump_px": jump,
+                    "tracking_status": tracking_ok,
+                }
+            )
 
         prev_gray = gray.copy()
         prev_points = valid_points.copy()
