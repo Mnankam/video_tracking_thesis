@@ -186,9 +186,9 @@ class InnerPipeSegmenter:
 
             if (
                 aspect_ratio > 3.0
-                and 15 < center_y < 50
-                and w > 120
-                and 5 <= h <= 70
+                and 5 < center_y < 40
+                and w > 80
+                and 3 <= h <= 45
             ):
                 candidates.append(cnt)
 
@@ -287,8 +287,8 @@ class BedSegmenterCV:
         morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "hsv_v",
-        threshold_mode: str = "otsu",
-        invert: bool = False,
+        threshold_mode: str = "otsu_inv",
+        invert: bool = True,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
@@ -315,7 +315,7 @@ class BedSegmenterCV:
             v_channel,
             0,
             255,
-            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+            cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU,
         )
 
         kernel = np.ones((5, 5), np.uint8)
@@ -350,14 +350,15 @@ class BedSegmenterCV:
             x, y, w, h = cv2.boundingRect(cnt)
             aspect_ratio = w / max(h, 1)
 
-            # y_global ist wichtig, weil y innerhalb der ROI liegt
-            y_global = y + y_offset
+            center_x_global = x_offset + x + w / 2.0
+            center_y_global = y_offset + y + h / 2.0
 
             if (
-                y_global > 390
+                400 <= center_y_global <= 470
+                and 650 <= center_x_global <= 1150
                 and aspect_ratio >= 2.0
                 and w >= 80
-                and 5 <= h <= 90
+                and 5 <= h <= 80
             ):
                 candidates.append(cnt)
 
