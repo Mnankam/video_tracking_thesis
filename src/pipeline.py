@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import os
 from collections import deque
@@ -7,9 +8,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import cv2
-import yaml
 import numpy as np
-import argparse
+import yaml
 
 from src.deflicker import FFTDeflicker
 from src.segmentation import (
@@ -92,7 +92,6 @@ class VideoPipeline:
 
         self.deflicker = None
         if config.enable_deflicker:
-            deflicker_roi_tuple = tuple(config.deflicker_roi) if config.deflicker_roi else None
             self.deflicker = FFTDeflicker(
                 fps=config.deflicker_fps,
                 flicker_freq=config.deflicker_freq,
@@ -101,15 +100,10 @@ class VideoPipeline:
                 min_history=config.deflicker_min_history,
                 smooth_alpha=config.deflicker_smooth_alpha,
                 use_median=config.deflicker_use_median,
-                roi=deflicker_roi_tuple,
+                roi=tuple(config.deflicker_roi) if config.deflicker_roi else None,
             )
 
         if config.segmentation_mode == "detectron2":
-            if not config.detectron2_config_file:
-                raise ValueError("detectron2_config_file fehlt.")
-            if not config.detectron2_weights_file:
-                raise ValueError("detectron2_weights_file fehlt.")
-
             self.segmenter = Detectron2Segmenter(
                 config_file=config.detectron2_config_file,
                 weights_file=config.detectron2_weights_file,
@@ -149,10 +143,8 @@ class VideoPipeline:
         if config.enable_tracking:
             if config.segmentation_mode == "pipe_cv":
                 self.tracker = SingleObjectTracker()
-            elif config.segmentation_mode in ["bed_cv", "detectron2", "yolo"]:
-                self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
             else:
-                raise ValueError(f"Unsupported segmentation_mode: {config.segmentation_mode}")
+                self.tracker = MultiObjectTracker(max_distance=60.0, max_missed=5)
         else:
             self.tracker = None
 
@@ -163,16 +155,13 @@ class VideoPipeline:
                 color_mode=config.bed_edge_color_mode,
             )
 
-        output_dir = os.path.dirname(config.output_csv)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(config.output_csv), exist_ok=True)
 
         if config.save_debug_frames:
             os.makedirs(config.debug_dir, exist_ok=True)
 
-        summary_dir = os.path.dirname(config.summary_csv)
-        if config.save_summary and summary_dir:
-            os.makedirs(summary_dir, exist_ok=True)
+        if config.save_summary:
+            os.makedirs(os.path.dirname(config.summary_csv), exist_ok=True)
 
     def _resize_if_needed(self, frame):
         if self.config.resize_width and self.config.resize_height:
@@ -201,6 +190,12 @@ class VideoPipeline:
 
         return float(self.bed_edge_ema)
 
+    def _segment_with_reference(self, segmenter, frame, bed_edge_y_smooth):
+        try:
+            return segmenter.segment(frame, bed_edge_y=bed_edge_y_smooth)
+        except TypeError:
+            return segmenter.segment(frame)
+
     def _select_particle_bed_detection(self, detections):
         if not detections:
             return None
@@ -226,12 +221,9 @@ class VideoPipeline:
         if detection is None:
             return
 
-        try:
-            cx, cy = detection["center"]
-            cx = int(cx)
-            cy = int(cy)
-        except Exception:
-            return
+        cx, cy = detection["center"]
+        cx = int(cx)
+        cy = int(cy)
 
         cv2.circle(vis, (cx, cy), radius, color, -1)
         cv2.putText(
@@ -259,21 +251,9 @@ class VideoPipeline:
     ) -> None:
         vis = frame.copy()
 
-        # Nur relevante Ergebnisse zeichnen:
-        # 1) Bettkante als Linie
-        # 2) Inner-pipe-Zentrum
-        # 3) Particle-bed-Zentrum
-        # Keine ROI-Rechtecke, keine Track-Bounding-Boxes.
-
         if bed_edge_y_smooth is not None:
             y = int(bed_edge_y_smooth)
-            cv2.line(
-                vis,
-                (0, y),
-                (vis.shape[1] - 1, y),
-                (255, 0, 0),
-                2,
-            )
+            cv2.line(vis, (0, y), (vis.shape[1] - 1, y), (255, 0, 0), 2)
             cv2.putText(
                 vis,
                 f"bed_edge={y}",
@@ -334,6 +314,7 @@ class VideoPipeline:
 
         with open(self.config.output_csv, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
+
             writer.writerow(
                 [
                     "frame", "time_seconds", "track_id",
@@ -371,7 +352,12 @@ class VideoPipeline:
                         bed_edge_y_raw = bed_edge_result.get("y_edge")
                         bed_edge_y_smooth = self._smooth_bed_edge(bed_edge_y_raw)
 
-                mask, detections = self.segmenter.segment(frame)
+                mask, detections = self._segment_with_reference(
+                    self.segmenter,
+                    frame,
+                    bed_edge_y_smooth,
+                )
+
                 debug_mask = mask.copy()
 
                 particle_bed_detection = self._select_particle_bed_detection(detections)
@@ -387,7 +373,10 @@ class VideoPipeline:
 
                 inner_pipe_detections = []
                 if self.inner_pipe_segmenter is not None:
-                    inner_pipe_mask, inner_pipe_detections = self.inner_pipe_segmenter.segment(frame)
+                    inner_pipe_mask, inner_pipe_detections = self.inner_pipe_segmenter.segment(
+                        frame,
+                        bed_edge_y=bed_edge_y_smooth,
+                    )
                     debug_mask = cv2.bitwise_or(debug_mask, inner_pipe_mask)
 
                 optical_box_detections = []
@@ -495,24 +484,22 @@ class VideoPipeline:
 
         cap.release()
 
-        pipeline_summary = {
-            "video_path": self.config.video_path,
-            "output_csv": self.config.output_csv,
-            "start_frame": start,
-            "end_frame": end,
-            "processed_frames": processed_frames,
-            "video_fps": video_fps,
-            "segmentation_mode": self.config.segmentation_mode,
-            "device": self.config.device,
-            "deflicker_enabled": self.config.enable_deflicker,
-            "deflicker_freq": self.config.deflicker_freq,
-            "bed_edge_smoothing": self.config.bed_edge_smoothing,
-            "enable_inner_pipe": self.config.enable_inner_pipe,
-            "enable_optical_box": self.config.enable_optical_box,
-        }
-
         summary = merge_summaries(
-            pipeline_summary,
+            {
+                "video_path": self.config.video_path,
+                "output_csv": self.config.output_csv,
+                "start_frame": start,
+                "end_frame": end,
+                "processed_frames": processed_frames,
+                "video_fps": video_fps,
+                "segmentation_mode": self.config.segmentation_mode,
+                "device": self.config.device,
+                "deflicker_enabled": self.config.enable_deflicker,
+                "deflicker_freq": self.config.deflicker_freq,
+                "bed_edge_smoothing": self.config.bed_edge_smoothing,
+                "enable_inner_pipe": self.config.enable_inner_pipe,
+                "enable_optical_box": self.config.enable_optical_box,
+            },
             self.evaluator.summary(),
             self.tracking_stats.to_dict(),
         )
