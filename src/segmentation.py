@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 
 import cv2
 import numpy as np
@@ -39,6 +39,29 @@ def extract_roi(frame: np.ndarray, roi: Optional[Tuple[int, int, int, int]]):
     return frame[y:y + h, x:x + w], x, y
 
 
+def make_roi_relative_to_bed_edge(
+    frame: np.ndarray,
+    base_roi: Optional[Tuple[int, int, int, int]],
+    bed_edge_y: Optional[float],
+    y_offset_from_bed: int,
+    height: int,
+):
+    if base_roi is None or bed_edge_y is None:
+        return base_roi
+
+    x, _, w, _ = map(int, base_roi)
+    img_h, img_w = frame.shape[:2]
+
+    y = int(bed_edge_y + y_offset_from_bed)
+
+    x = max(0, min(x, img_w - 1))
+    y = max(0, min(y, img_h - 1))
+    w = max(1, min(w, img_w - x))
+    h = max(1, min(height, img_h - y))
+
+    return (x, y, w, h)
+
+
 def make_full_mask(frame, roi_mask, x_offset, y_offset):
     full_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
     full_mask[
@@ -46,24 +69,6 @@ def make_full_mask(frame, roi_mask, x_offset, y_offset):
         x_offset:x_offset + roi_mask.shape[1],
     ] = roi_mask
     return full_mask
-
-
-def clean_mask(mask, kernel_size=3, open_iter=1, close_iter=1, horizontal=False):
-    if horizontal:
-        kernel = cv2.getStructuringElement(
-            cv2.MORPH_RECT,
-            (max(3, kernel_size * 2), max(1, kernel_size // 2)),
-        )
-    else:
-        kernel = np.ones((kernel_size, kernel_size), np.uint8)
-
-    if open_iter > 0:
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=open_iter)
-
-    if close_iter > 0:
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=close_iter)
-
-    return mask
 
 
 def contour_to_detection(contour, x_offset, y_offset, label):
@@ -86,6 +91,24 @@ def contour_to_detection(contour, x_offset, y_offset, label):
         "label": label,
         "contour": contour_global,
     }
+
+
+def clean_mask(mask, kernel_size=3, open_iter=1, close_iter=1, horizontal=False):
+    if horizontal:
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (max(3, kernel_size * 2), max(1, kernel_size // 2)),
+        )
+    else:
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+
+    if open_iter > 0:
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=open_iter)
+
+    if close_iter > 0:
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=close_iter)
+
+    return mask
 
 
 def filter_contours(
@@ -122,29 +145,30 @@ def filter_contours(
 
     return valid
 
+
 class InnerPipeSegmenter:
     def __init__(
         self,
         min_area: float = 120.0,
         blur_kernel: Tuple[int, int] = (5, 5),
-        canny_low: int = 12,
-        canny_high: int = 60,
-        morphology_kernel_size: int = 3,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "gray",
-        min_aspect_ratio: float = 3.0,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
-        self.canny_low = canny_low
-        self.canny_high = canny_high
-        self.morphology_kernel_size = morphology_kernel_size
         self.roi = roi
         self.color_mode = color_mode
-        self.min_aspect_ratio = min_aspect_ratio
 
-    def segment(self, frame):
-        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
+    def segment(self, frame, bed_edge_y: Optional[float] = None):
+        dynamic_roi = make_roi_relative_to_bed_edge(
+            frame,
+            self.roi,
+            bed_edge_y,
+            y_offset_from_bed=-75,
+            height=45,
+        )
+
+        roi_frame, x_offset, y_offset = extract_roi(frame, dynamic_roi)
 
         gray = convert_color(roi_frame, self.color_mode)
 
@@ -196,15 +220,7 @@ class InnerPipeSegmenter:
 
         if candidates:
             best = max(candidates, key=cv2.contourArea)
-
-            detections.append(
-                contour_to_detection(
-                    best,
-                    x_offset,
-                    y_offset,
-                    "inner_pipe",
-                )
-            )
+            detections.append(contour_to_detection(best, x_offset, y_offset, "inner_pipe"))
 
             clean = np.zeros_like(mask)
             cv2.drawContours(clean, [best], -1, 255, thickness=-1)
@@ -214,6 +230,7 @@ class InnerPipeSegmenter:
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
+
 
 class PipeSegmenterCV:
     def __init__(
@@ -283,24 +300,24 @@ class BedSegmenterCV:
         self,
         min_area: float = 80.0,
         blur_kernel: Tuple[int, int] = (3, 3),
-        use_morphology: bool = True,
-        morphology_kernel_size: int = 5,
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "hsv_v",
-        threshold_mode: str = "otsu_inv",
-        invert: bool = True,
     ) -> None:
         self.min_area = min_area
         self.blur_kernel = blur_kernel
-        self.use_morphology = use_morphology
-        self.morphology_kernel_size = morphology_kernel_size
         self.roi = roi
         self.color_mode = color_mode
-        self.threshold_mode = threshold_mode
-        self.invert = invert
 
-    def segment(self, frame):
-        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
+    def segment(self, frame, bed_edge_y: Optional[float] = None):
+        dynamic_roi = make_roi_relative_to_bed_edge(
+            frame,
+            self.roi,
+            bed_edge_y,
+            y_offset_from_bed=-10,
+            height=85,
+        )
+
+        roi_frame, x_offset, y_offset = extract_roi(frame, dynamic_roi)
 
         hsv = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2HSV)
         v_channel = hsv[:, :, 2]
@@ -320,19 +337,8 @@ class BedSegmenterCV:
 
         kernel = np.ones((5, 5), np.uint8)
 
-        mask = cv2.morphologyEx(
-            mask,
-            cv2.MORPH_CLOSE,
-            kernel,
-            iterations=2,
-        )
-
-        mask = cv2.morphologyEx(
-            mask,
-            cv2.MORPH_OPEN,
-            kernel,
-            iterations=1,
-        )
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
 
         contours, _ = cv2.findContours(
             mask,
@@ -341,6 +347,13 @@ class BedSegmenterCV:
         )
 
         candidates = []
+
+        if bed_edge_y is not None:
+            y_min = bed_edge_y - 10
+            y_max = bed_edge_y + 75
+        else:
+            y_min = 400
+            y_max = 470
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
@@ -354,7 +367,7 @@ class BedSegmenterCV:
             center_y_global = y_offset + y + h / 2.0
 
             if (
-                400 <= center_y_global <= 470
+                y_min <= center_y_global <= y_max
                 and 650 <= center_x_global <= 1150
                 and aspect_ratio >= 2.0
                 and w >= 80
@@ -366,15 +379,7 @@ class BedSegmenterCV:
 
         if candidates:
             best = max(candidates, key=cv2.contourArea)
-
-            detections.append(
-                contour_to_detection(
-                    best,
-                    x_offset,
-                    y_offset,
-                    "particle_bed",
-                )
-            )
+            detections.append(contour_to_detection(best, x_offset, y_offset, "particle_bed"))
 
             clean = np.zeros_like(mask)
             cv2.drawContours(clean, [best], -1, 255, thickness=-1)
@@ -384,7 +389,8 @@ class BedSegmenterCV:
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
-    
+
+
 class OpticalBoxSegmenter:
     def __init__(
         self,
@@ -482,16 +488,8 @@ class Detectron2Segmenter:
 
         boxes = instances.pred_boxes.tensor.numpy()
         masks = instances.pred_masks.numpy() if instances.has("pred_masks") else None
-        classes = (
-            instances.pred_classes.numpy().tolist()
-            if instances.has("pred_classes")
-            else None
-        )
-        scores = (
-            instances.scores.numpy().tolist()
-            if instances.has("scores")
-            else None
-        )
+        classes = instances.pred_classes.numpy().tolist() if instances.has("pred_classes") else None
+        scores = instances.scores.numpy().tolist() if instances.has("scores") else None
 
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box.astype(int)
