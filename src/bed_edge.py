@@ -7,37 +7,27 @@ import numpy as np
 
 
 class BedEdgeDetector:
-    """
-    Detektion der Bettkante innerhalb eines ROI.
-
-    Strategie:
-    - ROI ausschneiden
-    - Farbe/Grauwert analysieren
-    - horizontale Kanten über vertikalen Gradienten suchen
-    - kleine Lücken entlang horizontaler Kanten schließen
-    - den unteren Teil der ROI stärker gewichten
-    - Ergebnis in globale Bildkoordinaten zurückrechnen
-    """
-
     def __init__(
         self,
         roi: Optional[Tuple[int, int, int, int]] = None,
         blur_kernel: Tuple[int, int] = (9, 9),
-        threshold_value: int = 90,
         morphology_kernel_size: int = 5,
-        color_mode: str = "gray",
+        color_mode: str = "hsv_v",
         prefer_lower_half: bool = True,
         lower_weight_strength: float = 1.8,
-        min_signal: float = 18.0,
+        min_signal: float = 12.0,
+        expected_y_ratio: float = 0.65,
+        expected_y_weight: float = 0.8,
     ) -> None:
         self.roi = roi
         self.blur_kernel = blur_kernel
-        self.threshold_value = threshold_value
         self.morphology_kernel_size = morphology_kernel_size
         self.color_mode = color_mode
         self.prefer_lower_half = prefer_lower_half
         self.lower_weight_strength = lower_weight_strength
         self.min_signal = min_signal
+        self.expected_y_ratio = expected_y_ratio
+        self.expected_y_weight = expected_y_weight
 
     def _convert_color(self, frame: np.ndarray) -> np.ndarray:
         if self.color_mode == "gray":
@@ -80,43 +70,41 @@ class BedEdgeDetector:
         if self.blur_kernel is not None:
             gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
-        # Vertikaler Gradient: horizontale Kanten werden betont
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray = clahe.apply(gray)
+
         sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
         gradient_profile = np.mean(np.abs(sobel_y), axis=1)
 
-        # Maske zur Unterstützung der Kantenentscheidung
-        _, mask = cv2.threshold(
+        _, mask_binary = cv2.threshold(
             gray,
-            self.threshold_value,
+            0,
             255,
-            cv2.THRESH_BINARY,
+            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
         )
 
-        # Horizontale Lücken schließen:
-        # vorher sinngemäß kleiner/variabler Kernel,
-        # jetzt bewusst (35, 2), um Bettkantenfragmente horizontal zu verbinden.
+        _, mask_binary_inv = cv2.threshold(
+            gray,
+            0,
+            255,
+            cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU,
+        )
+
+        mask = cv2.bitwise_or(mask_binary, mask_binary_inv)
+
         kernel = cv2.getStructuringElement(
             cv2.MORPH_RECT,
             (35, 2),
         )
 
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
         mask_profile = np.mean(mask, axis=1) / 255.0
 
-        # Kombination aus Kantenstärke und Maskensignal
         score = gradient_profile * (1.0 + mask_profile)
 
-        # Unteren Teil der ROI bevorzugen, damit obere Reflexionen weniger dominieren
-        if self.prefer_lower_half:
-            n = len(score)
-            weights = np.linspace(1.0, self.lower_weight_strength, n)
-            score = score * weights
+        n = len(score)
 
-        # entspricht deiner gewünschten Robustheitsverschärfung:
-        # threshold_profile = 18 -> hier min_signal = 18.0
-        if len(score) == 0 or float(np.max(score)) < self.min_signal:
+        if n == 0:
             return {
                 "success": False,
                 "y_edge": np.nan,
@@ -124,7 +112,34 @@ class BedEdgeDetector:
                 "x_right": float(x_offset + roi_frame.shape[1] - 1),
             }
 
-        y_local = int(np.argmax(score))
+        if self.prefer_lower_half:
+            lower_weights = np.linspace(1.0, self.lower_weight_strength, n)
+            score = score * lower_weights
+
+        expected_y = self.expected_y_ratio * (n - 1)
+        y_positions = np.arange(n)
+
+        expected_weight = np.exp(
+            -0.5 * ((y_positions - expected_y) / max(1.0, 0.25 * n)) ** 2
+        )
+
+        score = score * (1.0 + self.expected_y_weight * expected_weight)
+
+        score_smooth = cv2.GaussianBlur(
+            score.astype(np.float32).reshape(-1, 1),
+            (1, 9),
+            0,
+        ).ravel()
+
+        if float(np.max(score_smooth)) < self.min_signal:
+            return {
+                "success": False,
+                "y_edge": np.nan,
+                "x_left": float(x_offset),
+                "x_right": float(x_offset + roi_frame.shape[1] - 1),
+            }
+
+        y_local = int(np.argmax(score_smooth))
         y_edge_global = y_offset + y_local
 
         return {
@@ -133,5 +148,5 @@ class BedEdgeDetector:
             "x_left": float(x_offset),
             "x_right": float(x_offset + roi_frame.shape[1] - 1),
             "y_local": float(y_local),
-            "score": float(np.max(score)),
+            "score": float(np.max(score_smooth)),
         }
