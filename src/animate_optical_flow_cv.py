@@ -2,22 +2,38 @@ import argparse
 import os
 
 import cv2
-import numpy as np
 import pandas as pd
+import yaml
+
+
+def load_config(path):
+    if path is None:
+        return {}
+
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def resize_frame(frame, config):
+    rw = config.get("resize_width", None)
+    rh = config.get("resize_height", None)
+
+    if rw is not None and rh is not None:
+        return cv2.resize(frame, (int(rw), int(rh)), interpolation=cv2.INTER_AREA)
+
+    return frame
 
 
 def draw_axes(vis, width, height, tick_step=200):
     axis_color = (255, 255, 255)
     text_color = (255, 255, 255)
 
-    # Hintergrund leicht abdunkeln für bessere Lesbarkeit
     overlay = vis.copy()
     cv2.rectangle(overlay, (0, 0), (width, 70), (0, 0, 0), -1)
     cv2.rectangle(overlay, (0, height - 45), (width, height), (0, 0, 0), -1)
     cv2.rectangle(overlay, (0, 0), (80, height), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.35, vis, 0.65, 0, vis)
 
-    # x-Achse unten
     y_axis_pos = height - 35
     cv2.line(vis, (80, y_axis_pos), (width - 20, y_axis_pos), axis_color, 1)
 
@@ -25,14 +41,7 @@ def draw_axes(vis, width, height, tick_step=200):
         if x < 80:
             continue
 
-        cv2.line(
-            vis,
-            (x, y_axis_pos - 6),
-            (x, y_axis_pos + 6),
-            axis_color,
-            1,
-            cv2.LINE_AA,
-        )
+        cv2.line(vis, (x, y_axis_pos - 6), (x, y_axis_pos + 6), axis_color, 1)
         cv2.putText(
             vis,
             str(x),
@@ -55,7 +64,6 @@ def draw_axes(vis, width, height, tick_step=200):
         cv2.LINE_AA,
     )
 
-    # y-Achse links
     x_axis_pos = 70
     cv2.line(vis, (x_axis_pos, 20), (x_axis_pos, height - 45), axis_color, 1)
 
@@ -63,14 +71,7 @@ def draw_axes(vis, width, height, tick_step=200):
         if y > height - 45:
             continue
 
-        cv2.line(
-            vis,
-            (x_axis_pos - 6, y),
-            (x_axis_pos + 6, y),
-            axis_color,
-            1,
-            cv2.LINE_AA,
-        )
+        cv2.line(vis, (x_axis_pos - 6, y), (x_axis_pos + 6, y), axis_color, 1)
         cv2.putText(
             vis,
             str(y),
@@ -99,6 +100,7 @@ def main():
     parser.add_argument("--video", required=True)
     parser.add_argument("--csv", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--config", default=None)
     parser.add_argument("--start-frame", type=int, default=1)
     parser.add_argument("--end-frame", type=int, default=None)
     parser.add_argument("--point-radius", type=int, default=5)
@@ -106,6 +108,8 @@ def main():
     parser.add_argument("--fps", type=float, default=None)
     parser.add_argument("--tick-step", type=int, default=200)
     args = parser.parse_args()
+
+    config = load_config(args.config)
 
     df = pd.read_csv(args.csv)
 
@@ -141,6 +145,8 @@ def main():
     if not ok:
         raise RuntimeError(f"Start-Frame konnte nicht gelesen werden: {start_frame}")
 
+    frame = resize_frame(frame, config)
+
     height, width = frame.shape[:2]
     out_fps = args.fps if args.fps is not None else (video_fps if video_fps > 0 else 30.0)
 
@@ -160,18 +166,16 @@ def main():
         if frame_idx != start_frame:
             ok, frame = cap.read()
             if not ok:
-                print(
-                    f"Warnung: Frame {frame_idx} konnte nicht gelesen werden. "
-                    "Stoppe Animation."
-                )
+                print(f"Warnung: Frame {frame_idx} konnte nicht gelesen werden. Stoppe Animation.")
                 break
+
+            frame = resize_frame(frame, config)
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         vis = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
         draw_axes(vis, width, height, tick_step=args.tick_step)
 
-        # Bewegungsspur
         history = df[
             (df["frame"] <= frame_idx)
             & (df["frame"] > frame_idx - args.trail_length)
@@ -191,7 +195,6 @@ def main():
                     cv2.LINE_AA,
                 )
 
-        # aktuelle Punkte
         frame_points = df[df["frame"] == frame_idx]
 
         for _, row in frame_points.iterrows():
