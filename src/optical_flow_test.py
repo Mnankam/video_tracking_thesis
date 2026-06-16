@@ -12,15 +12,25 @@ def load_config(path):
         return yaml.safe_load(f)
 
 
+def resize_frame(frame, config):
+    rw = config.get("resize_width", None)
+    rh = config.get("resize_height", None)
+
+    if rw is not None and rh is not None:
+        return cv2.resize(frame, (int(rw), int(rh)), interpolation=cv2.INTER_AREA)
+
+    return frame
+
+
 def snap_points_to_features(gray, points, search_radius=35):
     snapped = []
+
+    h, w = gray.shape[:2]
 
     for p in points:
         x, y = p.ravel()
         x = int(x)
         y = int(y)
-
-        h, w = gray.shape[:2]
 
         x1 = max(0, x - search_radius)
         y1 = max(0, y - search_radius)
@@ -44,6 +54,29 @@ def snap_points_to_features(gray, points, search_radius=35):
             snapped.append([x, y])
 
     return np.array(snapped, dtype=np.float32).reshape(-1, 1, 2)
+
+
+def save_initial_debug_image(frame, points, output_csv):
+    debug_path = output_csv.replace(".csv", "_initial_points.png")
+
+    debug = frame.copy()
+
+    for i, p in enumerate(points):
+        x, y = p.ravel().astype(int)
+        cv2.circle(debug, (x, y), 6, (0, 0, 255), -1)
+        cv2.putText(
+            debug,
+            f"id={i}",
+            (x + 8, y - 8),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 255),
+            1,
+            cv2.LINE_AA,
+        )
+
+    cv2.imwrite(debug_path, debug)
+    print(f"Initial point debug gespeichert: {debug_path}")
 
 
 def main():
@@ -71,10 +104,7 @@ def main():
     start_frame = int(config.get("start_frame", 0))
     end_frame = config.get("end_frame", None)
 
-    points = np.array(
-        config.get("optical_flow_points", []),
-        dtype=np.float32,
-    )
+    points = np.array(config.get("optical_flow_points", []), dtype=np.float32)
 
     if len(points) == 0:
         raise ValueError("Keine optical_flow_points in config.yaml gefunden.")
@@ -102,14 +132,17 @@ def main():
     if not ok:
         raise RuntimeError("Erster Frame konnte nicht gelesen werden.")
 
+    first_frame = resize_frame(first_frame, config)
+
     prev_gray = cv2.cvtColor(first_frame, cv2.COLOR_BGR2GRAY)
 
-    # Wichtig: Startpunkte auf echte Features in der Umgebung setzen
     prev_points = snap_points_to_features(
         prev_gray,
         points,
-        search_radius=35,
+        search_radius=int(config.get("optical_flow_snap_radius", 35)),
     )
+
+    save_initial_debug_image(first_frame, prev_points, output_csv)
 
     rows = []
 
@@ -132,6 +165,7 @@ def main():
         if not ok:
             break
 
+        frame = resize_frame(frame, config)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         next_points, status, error = cv2.calcOpticalFlowPyrLK(
