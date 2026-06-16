@@ -13,7 +13,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/te
 # Experiment Name 
 # =========================================================
 
-EXPERIMENT_NAME="05_vollständige_Segmentierung_stable"
+EXPERIMENT_NAME="06_Anpassung_Bed_edge_für_stabile_Bettkante"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
