@@ -45,7 +45,7 @@ optical_flow_max_jump_px: 8.0
 # =========================================================
 pipe_roi: [650, 340, 500, 110]
 inner_pipe_roi: [720, 360, 350, 25]
-bed_roi: [650, 410, 500, 70]
+bed_roi: [650, 380, 600, 70]
 bed_edge_roi: [650, 390, 500, 35]
 optical_box_roi: [650, 330, 500, 140]
 
@@ -55,8 +55,8 @@ optical_box_roi: [650, 330, 500, 140]
 bed_edge_color_mode: hsv_v
 
 bed_edge_smoothing: true
-bed_edge_median_window: 5
-bed_edge_ema_alpha: 0.3
+bed_edge_median_window: 7
+bed_edge_ema_alpha: 0.2
 
 # =========================================================
 # Ergebnisse
