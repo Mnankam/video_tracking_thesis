@@ -15,6 +15,8 @@ enable_tracking: true
 enable_bed_edge: true
 enable_inner_pipe: true
 enable_optical_flow: true
+optical_flow_use_blur: true
+optical_flow_use_equalize: true
 enable_optical_box: false
 
 save_debug_frames: true
@@ -31,15 +33,17 @@ device: cpu
 # =========================================================
 optical_flow_points:
   # innere Rohr-/Reflexionsstruktur
-  - [760, 385]
-  - [900, 385]
-  - [1030, 385]
+   - [507, 257]
+  - [600, 257]
+  - [687, 257]
 
   # Bettkante / Partikelbett-Oberkante
-  - [760, 410]
-  - [910, 405]
-  - [1030, 400]
-optical_flow_max_jump_px: 8.0
+  - [507, 273]
+  - [607, 270]
+  - [687, 267]
+optical_flow_snap_radius: 25
+optical_flow_max_jump_px: 5.0
+optical_flow_max_fb_error: 2.0
 # =========================================================
 # ROI Definitionen
 # =========================================================
