@@ -104,7 +104,7 @@ def main():
     parser.add_argument("--start-frame", type=int, default=1)
     parser.add_argument("--end-frame", type=int, default=None)
     parser.add_argument("--point-radius", type=int, default=5)
-    parser.add_argument("--trail-length", type=int, default=20)
+    parser.add_argument("--trail-length", type=int, default=80)
     parser.add_argument("--fps", type=float, default=None)
     parser.add_argument("--tick-step", type=int, default=200)
     args = parser.parse_args()
@@ -120,6 +120,12 @@ def main():
 
     if "tracking_status" in df.columns:
         df = df[df["tracking_status"] == 1].copy()
+
+    if "dx" not in df.columns:
+        df["dx"] = 0.0
+
+    if "dy" not in df.columns:
+        df["dy"] = 0.0
 
     cap = cv2.VideoCapture(args.video)
     if not cap.isOpened():
@@ -160,6 +166,9 @@ def main():
     if not writer.isOpened():
         raise RuntimeError(f"VideoWriter konnte nicht geöffnet werden: {args.out}")
 
+    print(f"Animation frame size: {frame.shape}")
+    print(f"Animation output: {args.out}")
+
     frame_idx = start_frame
 
     while frame_idx < end_frame:
@@ -195,21 +204,31 @@ def main():
                     cv2.LINE_AA,
                 )
 
-        frame_points = df[df["frame"] == frame_idx]
+        frame_points = df[
+            (df["frame"] == frame_idx)
+            & ((df["dx"].abs() > 0.2) | (df["dy"].abs() > 0.2))
+        ]
 
         for _, row in frame_points.iterrows():
             x = int(row["x"])
             y = int(row["y"])
             pid = int(row["point_id"])
 
-            cv2.circle(vis, (x, y), args.point_radius, (0, 0, 255), -1)
+            motion = abs(float(row["dx"])) + abs(float(row["dy"]))
+
+            if motion > 0.5:
+                color = (0, 255, 0)
+            else:
+                color = (0, 0, 255)
+
+            cv2.circle(vis, (x, y), args.point_radius, color, -1)
             cv2.putText(
                 vis,
                 f"id={pid}",
                 (x + 8, y - 8),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.45,
-                (0, 0, 255),
+                color,
                 1,
                 cv2.LINE_AA,
             )
