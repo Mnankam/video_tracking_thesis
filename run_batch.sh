@@ -118,14 +118,84 @@ for video in "$DATA"/*.MP4; do
 
         fi
     fi
+    # =========================================================
+    # Farneback Plots
+    # =========================================================
+
+    FARNEBACK_PLOT_DIR="$OUT/plots_${name}"
+    FARNEBACK_ANIMATION="$OUT/${name}_farneback_animation.avi"
+
+    mkdir -p "$FARNEBACK_PLOT_DIR"
+
+    echo "Running Farneback plots..."
+
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.plot_optical_flow_farneback \
+            --csv "$FARNEBACK_OUT" \
+            --out-dir "$FARNEBACK_PLOT_DIR" \
+        > "$OUT/logs/${name}_farneback_plot.log" 2>&1; then
+
+        echo "Farneback plots finished: $name"
+
+    else
+
+        echo "Farneback plots failed for $name"
+        echo "$OUT/logs/${name}_farneback_plot.log"
+
+    fi
 
     # =========================================================
-    # Analyse Farneback
+    # Farneback Analyse
     # =========================================================
-    # Hinweis:
-    # analyse_optical_flow.py ist ursprünglich für x/y/point_id gedacht.
-    # Für Farneback nutzt du später besser ein eigenes Analyse-Skript.
-    # Deshalb wird hier erstmal nur die CSV erzeugt.
+
+    echo "Running Farneback analysis..."
+
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.analyse_optical_flow_farneback \
+            --csv "$FARNEBACK_OUT" \
+            --out-dir "$FARNEBACK_ANALYSIS_DIR" \
+        > "$OUT/logs/${name}_farneback_analysis.log" 2>&1; then
+
+        echo "Farneback analysis finished: $name"
+
+    else
+
+        echo "Farneback analysis failed for $name"
+        echo "$OUT/logs/${name}_farneback_analysis.log"
+
+    fi
+
+    # =========================================================
+    # Farneback Animation
+    # =========================================================
+
+    echo "Running Farneback animation..."
+
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.animate_optical_flow_cv_farneback \
+            --config "$CONFIG_OUT" \
+            --out "$FARNEBACK_ANIMATION" \
+            --start-frame 1 \
+            --end-frame 300 \
+        > "$OUT/logs/${name}_farneback_animation.log" 2>&1; then
+
+        echo "Farneback animation finished: $name"
+
+    else
+
+        echo "Farneback animation failed for $name"
+        echo "$OUT/logs/${name}_farneback_animation.log"
+
+    fi
 
     echo "Farneback CSV ready:"
     echo "$FARNEBACK_OUT"
