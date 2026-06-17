@@ -22,9 +22,20 @@ def resize_frame(frame, config):
     return frame
 
 
+def preprocess_gray(frame, config):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    if config.get("optical_flow_use_blur", True):
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    if config.get("optical_flow_use_equalize", True):
+        gray = cv2.equalizeHist(gray)
+
+    return gray
+
+
 def snap_points_to_features(gray, points, search_radius=35):
     snapped = []
-
     h, w = gray.shape[:2]
 
     for p in points:
@@ -58,7 +69,6 @@ def snap_points_to_features(gray, points, search_radius=35):
 
 def save_initial_debug_image(frame, points, output_csv):
     debug_path = output_csv.replace(".csv", "_initial_points.png")
-
     debug = frame.copy()
 
     for i, p in enumerate(points):
@@ -80,7 +90,7 @@ def save_initial_debug_image(frame, points, output_csv):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Optical Flow Tracking")
+    parser = argparse.ArgumentParser(description="Lucas-Kanade Optical Flow CPU")
     parser.add_argument("--config", required=True)
     parser.add_argument("--output-csv", default=None)
     args = parser.parse_args()
@@ -133,18 +143,15 @@ def main():
         raise RuntimeError("Erster Frame konnte nicht gelesen werden.")
 
     first_frame = resize_frame(first_frame, config)
-
-    prev_gray = cv2.cvtColor(first_frame, cv2.COLOR_BGR2GRAY)
+    prev_gray = preprocess_gray(first_frame, config)
 
     prev_points = snap_points_to_features(
         prev_gray,
         points,
-        search_radius=int(config.get("optical_flow_snap_radius", 35)),
+        search_radius=int(config.get("optical_flow_snap_radius", 25)),
     )
 
     save_initial_debug_image(first_frame, prev_points, output_csv)
-
-    rows = []
 
     lk_params = dict(
         winSize=(31, 31),
@@ -156,8 +163,10 @@ def main():
         ),
     )
 
-    max_jump_px = float(config.get("optical_flow_max_jump_px", 8.0))
+    max_jump_px = float(config.get("optical_flow_max_jump_px", 5.0))
+    max_fb_error = float(config.get("optical_flow_max_fb_error", 2.0))
 
+    rows = []
     frame_idx = start_frame + 1
 
     while frame_idx < end_frame:
@@ -166,7 +175,7 @@ def main():
             break
 
         frame = resize_frame(frame, config)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = preprocess_gray(frame, config)
 
         next_points, status, error = cv2.calcOpticalFlowPyrLK(
             prev_gray,
@@ -180,6 +189,14 @@ def main():
             print(f"Optical Flow abgebrochen bei Frame {frame_idx}.")
             break
 
+        back_points, back_status, _ = cv2.calcOpticalFlowPyrLK(
+            gray,
+            prev_gray,
+            next_points,
+            None,
+            **lk_params,
+        )
+
         valid_points = prev_points.copy()
 
         for i, (p0, p1, st) in enumerate(zip(prev_points, next_points, status)):
@@ -190,7 +207,17 @@ def main():
             dy = float(y1 - y0)
             jump = float(np.sqrt(dx * dx + dy * dy))
 
-            tracking_ok = int(st[0] == 1 and jump <= max_jump_px)
+            if back_points is not None:
+                xb, yb = back_points[i].ravel()
+                fb_error = float(np.sqrt((xb - x0) ** 2 + (yb - y0) ** 2))
+            else:
+                fb_error = 999.0
+
+            tracking_ok = int(
+                st[0] == 1
+                and jump <= max_jump_px
+                and fb_error <= max_fb_error
+            )
 
             if tracking_ok:
                 valid_points[i] = p1
@@ -200,6 +227,7 @@ def main():
 
             rows.append(
                 {
+                    "method": "lucas_kanade_cpu",
                     "frame": frame_idx,
                     "time_seconds": frame_idx / video_fps if video_fps > 0 else 0.0,
                     "point_id": i,
@@ -208,6 +236,7 @@ def main():
                     "dx": dx,
                     "dy": dy,
                     "jump_px": jump,
+                    "fb_error": fb_error,
                     "tracking_status": tracking_ok,
                 }
             )
@@ -225,10 +254,11 @@ def main():
 
     df.to_csv(output_csv, index=False)
 
-    print("Optical Flow abgeschlossen.")
+    print("Lucas-Kanade Optical Flow abgeschlossen.")
     print(f"Video: {video_path}")
     print(f"Frames: {start_frame} bis {end_frame}")
     print(f"Output: {output_csv}")
+    print(f"Tracking success rate: {df['tracking_status'].mean() * 100:.2f} %")
     print(df.head())
 
 
