@@ -10,10 +10,10 @@ PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
 
 # =========================================================
-# Experiment Name 
+# Experiment Name
 # =========================================================
 
-EXPERIMENT_NAME="Lukas_Kanade_CPU"
+EXPERIMENT_NAME="Farneback_Dense_CPU"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
@@ -33,12 +33,12 @@ for video in "$DATA"/*.MP4; do
     CONFIG_OUT="$OUT/configs/config_${name}.yaml"
     RESULTS_OUT="$OUT/${name}_results.csv"
     SUMMARY_OUT="$OUT/${name}_summary.csv"
-    OPTICAL_FLOW_OUT="$OUT/${name}_optical_flow.csv"
-    OPTICAL_FLOW_ANIMATION="$OUT/${name}_optical_flow_animation.avi"
+
+    FARNEBACK_OUT="$OUT/${name}_farneback_dense.csv"
 
     DEBUG_OUT="$OUT/debug_${name}"
-    OPTICAL_FLOW_PLOT_DIR="$OUT/plots_${name}"
-    OPTICAL_FLOW_ANALYSIS_DIR="$OUT/analysis_${name}"
+    FARNEBACK_ANALYSIS_DIR="$OUT/analysis_${name}"
+    VISUALIZATION_OUT="$OUT/${name}_visualization.mp4"
 
     echo "======================================"
     echo "Processing: $name"
@@ -48,18 +48,17 @@ for video in "$DATA"/*.MP4; do
 
     mkdir -p \
         "$DEBUG_OUT" \
-        "$OPTICAL_FLOW_PLOT_DIR" \
-        "$OPTICAL_FLOW_ANALYSIS_DIR"
+        "$FARNEBACK_ANALYSIS_DIR"
 
     sed "s|^video_path:.*|video_path: $video|; \
          s|^output_csv:.*|output_csv: $RESULTS_OUT|; \
          s|^summary_csv:.*|summary_csv: $SUMMARY_OUT|; \
          s|^debug_dir:.*|debug_dir: $DEBUG_OUT|; \
-         s|^optical_flow_csv:.*|optical_flow_csv: $OPTICAL_FLOW_OUT|" \
+         s|^optical_flow_csv:.*|optical_flow_csv: $FARNEBACK_OUT|" \
          configs/config.yaml > "$CONFIG_OUT"
 
     # =========================================================
-    # Pipeline
+    # Pipeline: Segmentierung + Tracking
     # =========================================================
 
     if [ -f "$RESULTS_OUT" ]; then
@@ -90,110 +89,49 @@ for video in "$DATA"/*.MP4; do
     fi
 
     # =========================================================
-    # Optical Flow
+    # Farneback Dense Optical Flow
     # =========================================================
 
-    if [ -f "$OPTICAL_FLOW_OUT" ]; then
+    if [ -f "$FARNEBACK_OUT" ]; then
 
-        echo "Optical flow already exists for $name, skipping."
+        echo "Farneback already exists for $name, skipping."
 
     else
 
-        echo "Running optical flow..."
+        echo "Running Farneback dense optical flow..."
 
         if apptainer exec \
             -B /mnt/ceph-hdd:/mnt/ceph-hdd \
             -B "$PROJECT":"$PROJECT" \
             "$CONTAINER" \
-            python -m src.optical_flow_test \
+            python -m src.optical_flow_farneback \
                 --config "$CONFIG_OUT" \
-                --output-csv "$OPTICAL_FLOW_OUT" \
-            > "$OUT/logs/${name}_optical_flow.log" 2>&1; then
+                --output-csv "$FARNEBACK_OUT" \
+            > "$OUT/logs/${name}_farneback.log" 2>&1; then
 
-            echo "Optical flow finished: $name"
+            echo "Farneback finished: $name"
 
         else
 
-            echo "Optical flow failed for $name"
-            echo "$OUT/logs/${name}_optical_flow.log"
+            echo "Farneback failed for $name"
+            echo "$OUT/logs/${name}_farneback.log"
 
         fi
     fi
 
     # =========================================================
-    # Optical Flow Plots
+    # Analyse Farneback
     # =========================================================
+    # Hinweis:
+    # analyse_optical_flow.py ist ursprünglich für x/y/point_id gedacht.
+    # Für Farneback nutzt du später besser ein eigenes Analyse-Skript.
+    # Deshalb wird hier erstmal nur die CSV erzeugt.
 
-    echo "Running optical flow plots..."
-
-    if apptainer exec \
-        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
-        -B "$PROJECT":"$PROJECT" \
-        "$CONTAINER" \
-        python -m src.plot_optical_flow \
-            --csv "$OPTICAL_FLOW_OUT" \
-            --out-dir "$OPTICAL_FLOW_PLOT_DIR" \
-        > "$OUT/logs/${name}_optical_flow_plot.log" 2>&1; then
-
-        echo "Optical flow plots finished: $name"
-
-    else
-
-        echo "Optical flow plots failed for $name"
-
-    fi
+    echo "Farneback CSV ready:"
+    echo "$FARNEBACK_OUT"
 
     # =========================================================
-    # Optical Flow Analysis
-    # =========================================================
-
-    echo "Running optical flow analysis..."
-
-    if apptainer exec \
-        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
-        -B "$PROJECT":"$PROJECT" \
-        "$CONTAINER" \
-        python -m src.analyse_optical_flow \
-            --csv "$OPTICAL_FLOW_OUT" \
-            --out-dir "$OPTICAL_FLOW_ANALYSIS_DIR" \
-        > "$OUT/logs/${name}_optical_flow_analysis.log" 2>&1; then
-
-        echo "Optical flow analysis finished: $name"
-
-    else
-
-        echo "Optical flow analysis failed for $name"
-
-    fi
-
-    # =========================================================
-    # Optical Flow Animation
-    # =========================================================
-
-    echo "Running optical flow animation..."
-
-    if apptainer exec \
-        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
-        -B "$PROJECT":"$PROJECT" \
-        "$CONTAINER" \
-        python -m src.animate_optical_flow_cv \
-            --video "$video" \
-            --csv "$OPTICAL_FLOW_OUT" \
-            --out "$OPTICAL_FLOW_ANIMATION" \
-            --start-frame 1 \
-            --end-frame 300 \
-        > "$OUT/logs/${name}_optical_flow_animation.log" 2>&1; then
-
-        echo "Optical flow animation finished: $name"
-
-    else
-
-        echo "Optical flow animation failed for $name"
-
-    fi
-
-    # =========================================================
-    # Visualization
+    # Visualization der OpenCV-Segmentierung
     # =========================================================
 
     echo "Running visualization..."
@@ -211,6 +149,7 @@ for video in "$DATA"/*.MP4; do
     else
 
         echo "Visualization failed for $name"
+        echo "$OUT/logs/${name}_visualization.log"
 
     fi
 
@@ -220,4 +159,5 @@ done
 
 echo "======================================"
 echo "All videos processed."
+echo "Experiment: $EXPERIMENT_NAME"
 echo "======================================"
