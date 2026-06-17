@@ -13,7 +13,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/te
 # Experiment Name 
 # =========================================================
 
-EXPERIMENT_NAME="08_Optical_Flow_Verbesserung_für_stabile_inner_pipe_tracking"
+EXPERIMENT_NAME="Lukas_Kanade_CPU"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
