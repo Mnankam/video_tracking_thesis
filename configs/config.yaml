@@ -33,7 +33,7 @@ device: cpu
 # =========================================================
 optical_flow_points:
   # innere Rohr-/Reflexionsstruktur
-   - [507, 257]
+  - [507, 257]
   - [600, 257]
   - [687, 257]
 
