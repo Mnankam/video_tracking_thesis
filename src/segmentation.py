@@ -160,13 +160,10 @@ class InnerPipeSegmenter:
         self.color_mode = color_mode
 
     def segment(self, frame, bed_edge_y: Optional[float] = None):
-        dynamic_roi = make_roi_relative_to_bed_edge(
-            frame,
-            self.roi,
-            bed_edge_y,
-            y_offset_from_bed=-75,
-            height=45,
-        )
+        # WICHTIG:
+        # Kein bed_edge_y -75 mehr.
+        # Das hat inner_pipe zu tief gesucht.
+        dynamic_roi = self.roi
 
         roi_frame, x_offset, y_offset = extract_roi(frame, dynamic_roi)
 
@@ -206,13 +203,11 @@ class InnerPipeSegmenter:
 
             x, y, w, h = cv2.boundingRect(cnt)
             aspect_ratio = w / max(h, 1)
-            center_y = y + h / 2.0
 
             if (
-                aspect_ratio > 3.0
-                and 5 < center_y < 40
-                and w > 80
-                and 3 <= h <= 45
+                aspect_ratio > 2.5
+                and w > 50
+                and 3 <= h <= 60
             ):
                 candidates.append(cnt)
 
@@ -220,7 +215,15 @@ class InnerPipeSegmenter:
 
         if candidates:
             best = max(candidates, key=cv2.contourArea)
-            detections.append(contour_to_detection(best, x_offset, y_offset, "inner_pipe"))
+
+            detections.append(
+                contour_to_detection(
+                    best,
+                    x_offset,
+                    y_offset,
+                    "inner_pipe",
+                )
+            )
 
             clean = np.zeros_like(mask)
             cv2.drawContours(clean, [best], -1, 255, thickness=-1)
