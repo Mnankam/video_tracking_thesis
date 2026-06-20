@@ -160,12 +160,7 @@ class InnerPipeSegmenter:
         self.color_mode = color_mode
 
     def segment(self, frame, bed_edge_y: Optional[float] = None):
-        # WICHTIG:
-        # Kein bed_edge_y -75 mehr.
-        # Das hat inner_pipe zu tief gesucht.
-        dynamic_roi = self.roi
-
-        roi_frame, x_offset, y_offset = extract_roi(frame, dynamic_roi)
+        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         gray = convert_color(roi_frame, self.color_mode)
 
@@ -173,19 +168,19 @@ class InnerPipeSegmenter:
             gray = cv2.GaussianBlur(gray, self.blur_kernel, 0)
 
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        gray_eq = clahe.apply(gray)
+        gray = clahe.apply(gray)
 
         _, mask = cv2.threshold(
-            gray_eq,
+            gray,
             0,
             255,
-            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+            cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU,
         )
 
         kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 5))
         kernel_open = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 3))
 
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close, iterations=2)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close, iterations=1)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_open, iterations=1)
 
         contours, _ = cv2.findContours(
@@ -205,9 +200,9 @@ class InnerPipeSegmenter:
             aspect_ratio = w / max(h, 1)
 
             if (
-                aspect_ratio > 2.5
-                and w > 50
-                and 3 <= h <= 60
+                aspect_ratio > 2.0
+                and w >= 80
+                and 8 <= h <= 70
             ):
                 candidates.append(cnt)
 
@@ -301,7 +296,7 @@ class PipeSegmenterCV:
 class BedSegmenterCV:
     def __init__(
         self,
-        min_area: float = 30.0,
+        min_area: float = 80.0,
         blur_kernel: Tuple[int, int] = (3, 3),
         roi: Optional[Tuple[int, int, int, int]] = None,
         color_mode: str = "hsv_v",
@@ -312,15 +307,7 @@ class BedSegmenterCV:
         self.color_mode = color_mode
 
     def segment(self, frame, bed_edge_y: Optional[float] = None):
-        dynamic_roi = make_roi_relative_to_bed_edge(
-            frame,
-            self.roi,
-            bed_edge_y,
-            y_offset_from_bed=-5,
-            height=95,
-        )
-
-        roi_frame, x_offset, y_offset = extract_roi(frame, dynamic_roi)
+        roi_frame, x_offset, y_offset = extract_roi(frame, self.roi)
 
         hsv = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2HSV)
         v = hsv[:, :, 2]
@@ -331,26 +318,17 @@ class BedSegmenterCV:
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         v = clahe.apply(v)
 
-        _, mask_dark = cv2.threshold(
+        _, mask = cv2.threshold(
             v,
             0,
             255,
             cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU,
         )
 
-        _, mask_bright = cv2.threshold(
-            v,
-            0,
-            255,
-            cv2.THRESH_BINARY + cv2.THRESH_OTSU,
-        )
+        kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (31, 5))
+        kernel_open = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 3))
 
-        mask = cv2.bitwise_or(mask_dark, mask_bright)
-
-        kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 5))
-        kernel_open = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
-
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close, iterations=1)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel_close, iterations=2)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel_open, iterations=1)
 
         contours, _ = cv2.findContours(
@@ -359,15 +337,7 @@ class BedSegmenterCV:
             cv2.CHAIN_APPROX_SIMPLE,
         )
 
-        detections = []
         candidates = []
-
-        if bed_edge_y is not None:
-            y_min = bed_edge_y - 15
-            y_max = bed_edge_y + 85
-        else:
-            y_min = 390
-            y_max = 480
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
@@ -375,22 +345,27 @@ class BedSegmenterCV:
                 continue
 
             x, y, w, h = cv2.boundingRect(cnt)
-
-            center_x_global = x_offset + x + w / 2.0
-            center_y_global = y_offset + y + h / 2.0
+            aspect_ratio = w / max(h, 1)
 
             if (
-                y_min <= center_y_global <= y_max
-                and 620 <= center_x_global <= 1180
-                and w >= 15
-                and 2 <= h <= 100
+                aspect_ratio >= 3.0
+                and w >= 120
+                and 8 <= h <= 80
             ):
                 candidates.append(cnt)
 
+        detections = []
+
         if candidates:
             best = max(candidates, key=cv2.contourArea)
+
             detections.append(
-                contour_to_detection(best, x_offset, y_offset, "particle_bed")
+                contour_to_detection(
+                    best,
+                    x_offset,
+                    y_offset,
+                    "particle_bed",
+                )
             )
 
             clean = np.zeros_like(mask)
@@ -401,7 +376,6 @@ class BedSegmenterCV:
 
         full_mask = make_full_mask(frame, mask, x_offset, y_offset)
         return full_mask, detections
-
 
 class OpticalBoxSegmenter:
     def __init__(
