@@ -265,19 +265,19 @@ class VideoPipeline:
                 cv2.LINE_AA,
             )
 
-        if self.config.bed_roi:
-            x, y, w, h = map(int, self.config.bed_roi)
-            cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 165, 255), 2)
-            cv2.putText(
-                vis,
-                "bed_roi",
-                (x, max(20, y - 8)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 165, 255),
-                2,
-                cv2.LINE_AA,
-            )
+        #if self.config.bed_roi:
+        #    x, y, w, h = map(int, self.config.bed_roi)
+        #    cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 165, 255), 2)
+        #    cv2.putText(
+        #        vis,
+        #        "bed_roi",
+        #        (x, max(20, y - 8)),
+        #        cv2.FONT_HERSHEY_SIMPLEX,
+        #        0.5,
+        #        (0, 165, 255),
+        #        2,
+        #        cv2.LINE_AA,
+        #    )
 
         if self.config.bed_edge_roi:
             x, y, w, h = map(int, self.config.bed_edge_roi)
