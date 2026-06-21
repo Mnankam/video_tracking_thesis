@@ -48,7 +48,7 @@ optical_flow_max_fb_error: 2.0
 # ROI Definitionen
 # =========================================================
 inner_pipe_roi: [470, 345, 260, 60]
-bed_roi: [755, 340, 430, 70]
+bed_roi: [755, 370, 430, 70]
 bed_edge_roi: [755, 360, 430, 35]
 optical_box_roi: [450, 250, 760, 190]
 
