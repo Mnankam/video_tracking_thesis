@@ -1,0 +1,63 @@
+#!/bin/bash
+set -euo pipefail
+
+CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
+PROJECT="$HOME/projects/video_tracking_thesis"
+DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
+
+EXPERIMENT_NAME="CUDA_Optical_Flow_GPU1"
+OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
+
+mkdir -p "$OUT/logs" "$OUT/configs"
+cd "$PROJECT"
+
+for video in "$DATA"/*.MP4; do
+    [ -e "$video" ] || { echo "Keine MP4-Dateien gefunden."; exit 1; }
+
+    name=$(basename "$video" .MP4)
+
+    CONFIG_OUT="$OUT/configs/config_${name}.yaml"
+    RESULTS_OUT="$OUT/${name}_results.csv"
+    SUMMARY_OUT="$OUT/${name}_summary.csv"
+    CUDA_OUT="$OUT/${name}_cuda_optical_flow.csv"
+    CUDA_ANALYSIS_DIR="$OUT/analysis_${name}"
+    CUDA_PLOT_DIR="$OUT/plots_${name}"
+    CUDA_ANIMATION="$OUT/${name}_cuda_animation.avi"
+    DEBUG_OUT="$OUT/debug_${name}"
+
+    mkdir -p "$DEBUG_OUT" "$CUDA_ANALYSIS_DIR" "$CUDA_PLOT_DIR"
+
+    echo "======================================"
+    echo "Processing: $name"
+    echo "Experiment: $EXPERIMENT_NAME"
+    echo "======================================"
+
+    sed "s|^video_path:.*|video_path: $video|; \
+         s|^output_csv:.*|output_csv: $RESULTS_OUT|; \
+         s|^summary_csv:.*|summary_csv: $SUMMARY_OUT|; \
+         s|^debug_dir:.*|debug_dir: $DEBUG_OUT|; \
+         s|^optical_flow_csv:.*|optical_flow_csv: $CUDA_OUT|" \
+         configs/config.yaml > "$CONFIG_OUT"
+
+    echo "Running pipeline..."
+    apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.pipeline --config "$CONFIG_OUT" \
+        > "$OUT/logs/${name}_pipeline.log" 2>&1
+
+    echo "Running CUDA optical flow..."
+    apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.optical_flow_cuda \
+            --config "$CONFIG_OUT" \
+            --output-csv "$CUDA_OUT" \
+        > "$OUT/logs/${name}_cuda.log" 2>&1
+
+    echo "Done: $name"
+done
+
+echo "All CUDA Optical Flow videos processed."
