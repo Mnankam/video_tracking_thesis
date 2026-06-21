@@ -33,24 +33,24 @@ device: cpu
 # =========================================================
 optical_flow_points:
   # innere Rohr-/Reflexionsstruktur
-  - [507, 257]
-  - [600, 257]
-  - [687, 257]
+  - [500, 315]
+  - [600, 315]
+  - [700, 315]
 
   # Bettkante / Partikelbett-Oberkante
-  - [507, 273]
-  - [607, 270]
-  - [687, 267]
+  - [800, 310]
+  - [950, 310]
+  - [1100, 310]
 optical_flow_snap_radius: 25
 optical_flow_max_jump_px: 5.0
 optical_flow_max_fb_error: 2.0
 # =========================================================
 # ROI Definitionen
 # =========================================================
-inner_pipe_roi: [610,255,250,65]
-bed_roi: [900,300,310,70]
-bed_edge_roi: [900,290,310,25]
-optical_box_roi: [650, 330, 500, 140]
+inner_pipe_roi: [470, 285, 260, 60]
+bed_roi: [755, 300, 430, 70]
+bed_edge_roi: [755, 285, 430, 35]
+optical_box_roi: [450, 240, 760, 180]
 
 # =========================================================
 # Bettkante
