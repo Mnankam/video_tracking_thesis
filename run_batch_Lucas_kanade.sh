@@ -39,6 +39,10 @@ for video in "$DATA"/*.MP4; do
          s|^optical_flow_csv:.*|optical_flow_csv: $LK_OUT|" \
          configs/config.yaml > "$CONFIG_OUT"
 
+    # =========================================================
+    # Pipeline: Segmentierung + Tracking
+    # =========================================================
+
     echo "Running pipeline..."
     apptainer exec \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
@@ -46,6 +50,10 @@ for video in "$DATA"/*.MP4; do
         "$CONTAINER" \
         python -m src.pipeline --config "$CONFIG_OUT" \
         > "$OUT/logs/${name}_pipeline.log" 2>&1
+
+    # =========================================================
+    # Lukas Kanade Optical Flow
+    # =========================================================
 
     echo "Running Lucas-Kanade optical flow..."
     apptainer exec \
@@ -57,6 +65,10 @@ for video in "$DATA"/*.MP4; do
             --output-csv "$LK_OUT" \
         > "$OUT/logs/${name}_lucas_kanade.log" 2>&1
 
+    # =========================================================
+    # Lukas Kanade  Plot
+    # =========================================================
+
     echo "Running Lucas-Kanade plots..."
     apptainer exec \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
@@ -67,6 +79,10 @@ for video in "$DATA"/*.MP4; do
             --out-dir "$LK_PLOT_DIR" \
         > "$OUT/logs/${name}_lucas_kanade_plot.log" 2>&1
 
+    # =========================================================
+    # Lukas Kanade  analysis
+    # =========================================================
+
     echo "Running Lucas-Kanade analysis..."
     apptainer exec \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
@@ -76,6 +92,10 @@ for video in "$DATA"/*.MP4; do
             --csv "$LK_OUT" \
             --out-dir "$LK_ANALYSIS_DIR" \
         > "$OUT/logs/${name}_lucas_kanade_analysis.log" 2>&1
+
+    # =========================================================
+    # Lukas Kanade  Animation
+    # =========================================================
 
     echo "Running Lucas-Kanade animation..."
     apptainer exec \
@@ -91,7 +111,31 @@ for video in "$DATA"/*.MP4; do
             --end-frame 300 \
         > "$OUT/logs/${name}_lucas_kanade_animation.log" 2>&1
 
+    # =========================================================
+    # Visualization der OpenCV-Segmentierung
+    # =========================================================
+
+    echo "Running visualization..."
+
+    if apptainer exec \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.visualization \
+            --config "$CONFIG_OUT" \
+        > "$OUT/logs/${name}_visualization.log" 2>&1; then
+
+        echo "Visualization finished: $name"
+
+    else
+
+        echo "Visualization failed for $name"
+        echo "$OUT/logs/${name}_visualization.log"
+
+    fi
+
     echo "Done: $name"
+
 done
 
 echo "All Lucas-Kanade videos processed."
