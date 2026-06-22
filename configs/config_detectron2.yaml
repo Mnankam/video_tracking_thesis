@@ -1,0 +1,84 @@
+video_path: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4
+
+output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/results.csv
+summary_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/summary.csv
+
+start_frame: 0
+end_frame: 500
+
+resize_width: 1280
+resize_height: 720
+
+device: cuda
+
+save_debug_frames: true
+debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/debug
+
+# =========================================================
+# Detectron2
+# =========================================================
+segmentation_mode: detectron2
+
+detectron2_config_file: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml
+detectron2_weights_file: COCO
+detectron2_score_threshold: 0.5
+
+detectron2_output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/detectron2_results.csv
+detectron2_debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/debug
+
+# =========================================================
+# Stabile OpenCV-ROI als Referenz / Ground-Truth-Baseline
+# =========================================================
+inner_pipe_roi: [470, 345, 260, 60]
+bed_roi: [755, 360, 430, 70]
+bed_edge_roi: [755, 360, 430, 35]
+optical_box_roi: [450, 250, 760, 190]
+
+# =========================================================
+# Optional: Tracking / Optical Flow kompatibel halten
+# =========================================================
+enable_deflicker: true
+enable_tracking: true
+enable_bed_edge: true
+enable_inner_pipe: true
+enable_optical_flow: false
+enable_optical_box: false
+
+segmentation_color_mode: hsv_v
+bed_edge_color_mode: hsv_v
+
+bed_edge_smoothing: true
+bed_edge_median_window: 7
+bed_edge_ema_alpha: 0.2
+
+# =========================================================
+# Optical Flow Punkte bleiben als Referenz vorhanden
+# =========================================================
+optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/optical_flow.csv
+
+optical_flow_points:
+  # innere Rohr-/Reflexionsstruktur
+  - [500, 315]
+  - [600, 315]
+  - [700, 315]
+
+  # Bettkante / Partikelbett-Oberkante
+  - [800, 310]
+  - [950, 310]
+  - [1100, 310]
+
+optical_flow_snap_radius: 25
+optical_flow_max_jump_px: 5.0
+optical_flow_max_fb_error: 2.0
+
+# =========================================================
+# Deflicker
+# =========================================================
+deflicker_fps: 200.0
+deflicker_freq: 50.0
+deflicker_use_second_harmonic: true
+deflicker_window_size: 256
+deflicker_min_history: 32
+deflicker_smooth_alpha: 0.2
+deflicker_use_median: true
+deflicker_roi: null
