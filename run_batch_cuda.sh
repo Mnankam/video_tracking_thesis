@@ -30,6 +30,7 @@ for video in "$DATA"/*.MP4; do
     echo "======================================"
     echo "Processing: $name"
     echo "Experiment: $EXPERIMENT_NAME"
+    echo "Video: $video"
     echo "======================================"
 
     sed "s|^video_path:.*|video_path: $video|; \
@@ -44,7 +45,8 @@ for video in "$DATA"/*.MP4; do
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
         -B "$PROJECT":"$PROJECT" \
         "$CONTAINER" \
-        python -m src.pipeline --config "$CONFIG_OUT" \
+        python -m src.pipeline \
+            --config "$CONFIG_OUT" \
         > "$OUT/logs/${name}_pipeline.log" 2>&1
 
     echo "Running CUDA optical flow..."
@@ -57,7 +59,42 @@ for video in "$DATA"/*.MP4; do
             --output-csv "$CUDA_OUT" \
         > "$OUT/logs/${name}_cuda.log" 2>&1
 
+    echo "Running CUDA plots..."
+    apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.plot_optical_flow_cuda \
+            --csv "$CUDA_OUT" \
+            --out-dir "$CUDA_PLOT_DIR" \
+        > "$OUT/logs/${name}_cuda_plot.log" 2>&1
+
+    echo "Running CUDA analysis..."
+    apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.analyse_optical_flow_cuda \
+            --csv "$CUDA_OUT" \
+            --out-dir "$CUDA_ANALYSIS_DIR" \
+        > "$OUT/logs/${name}_cuda_analysis.log" 2>&1
+
+    echo "Running CUDA animation..."
+    apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.animate_optical_flow_cv_cuda \
+            --config "$CONFIG_OUT" \
+            --out "$CUDA_ANIMATION" \
+            --start-frame 1 \
+            --end-frame 300 \
+        > "$OUT/logs/${name}_cuda_animation.log" 2>&1
+
     echo "Done: $name"
 done
 
+echo "======================================"
 echo "All CUDA Optical Flow videos processed."
+echo "Experiment: $EXPERIMENT_NAME"
+echo "======================================"
