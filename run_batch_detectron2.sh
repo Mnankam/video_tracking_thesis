@@ -19,6 +19,8 @@ for video in "$DATA"/*.MP4; do
 
     CONFIG_OUT="$OUT/configs/config_${name}.yaml"
     DETECTRON2_OUT="$OUT/${name}_detectron2_results.csv"
+    DETECTRON2_ANIMATION="$OUT/${name}_detectron2_animation.avi"
+
     DEBUG_OUT="$OUT/debug_${name}"
     PLOT_DIR="$OUT/plots_${name}"
     ANALYSIS_DIR="$OUT/analysis_${name}"
@@ -51,11 +53,9 @@ for video in "$DATA"/*.MP4; do
         echo "Detectron2 finished: $name"
 
     else
-
         echo "Detectron2 failed for $name"
         echo "$OUT/logs/${name}_detectron2.log"
         continue
-
     fi
 
     echo "Running Detectron2 plots..."
@@ -72,10 +72,8 @@ for video in "$DATA"/*.MP4; do
         echo "Detectron2 plots finished: $name"
 
     else
-
         echo "Detectron2 plots failed for $name"
         echo "$OUT/logs/${name}_detectron2_plot.log"
-
     fi
 
     echo "Running Detectron2 analysis..."
@@ -92,10 +90,30 @@ for video in "$DATA"/*.MP4; do
         echo "Detectron2 analysis finished: $name"
 
     else
-
         echo "Detectron2 analysis failed for $name"
         echo "$OUT/logs/${name}_detectron2_analysis.log"
+    fi
 
+    echo "Running Detectron2 animation..."
+
+    if apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.animate_optical_flow_detectron2 \
+            --config "$CONFIG_OUT" \
+            --csv "$DETECTRON2_OUT" \
+            --out "$DETECTRON2_ANIMATION" \
+            --start-frame 1 \
+            --end-frame 300 \
+            --draw-reference-rois \
+        > "$OUT/logs/${name}_detectron2_animation.log" 2>&1; then
+
+        echo "Detectron2 animation finished: $name"
+
+    else
+        echo "Detectron2 animation failed for $name"
+        echo "$OUT/logs/${name}_detectron2_animation.log"
     fi
 
     echo "Done: $name"
