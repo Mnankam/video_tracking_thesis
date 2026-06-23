@@ -17,7 +17,11 @@ def resize_frame(frame, config):
     rh = config.get("resize_height")
 
     if rw is not None and rh is not None:
-        return cv2.resize(frame, (int(rw), int(rh)), interpolation=cv2.INTER_AREA)
+        return cv2.resize(
+            frame,
+            (int(rw), int(rh)),
+            interpolation=cv2.INTER_AREA,
+        )
 
     return frame
 
@@ -43,16 +47,6 @@ def draw_roi_boxes(vis, config):
         color = colors[name]
 
         cv2.rectangle(vis, (x, y), (x + w, y + h), color, 2)
-        cv2.putText(
-            vis,
-            name,
-            (x, max(20, y - 8)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            color,
-            2,
-            cv2.LINE_AA,
-        )
 
 
 def build_predictor(config):
@@ -84,43 +78,35 @@ def build_predictor(config):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Detectron2 inference on flow loop videos")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--output-csv", default=None)
     parser.add_argument("--debug-dir", default=None)
+
     args = parser.parse_args()
 
     config = load_config(args.config)
 
     video_path = config["video_path"]
 
-    output_csv = (
-        args.output_csv
-        or config.get("detectron2_output_csv")
-        or config.get("output_csv")
-    )
-
-    debug_dir = (
-        args.debug_dir
-        or config.get("detectron2_debug_dir")
-        or config.get("debug_dir")
-    )
+    output_csv = args.output_csv or config.get("detectron2_output_csv")
+    debug_dir = args.debug_dir or config.get("detectron2_debug_dir")
 
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     os.makedirs(debug_dir, exist_ok=True)
-
-    start_frame = int(config.get("start_frame", 0))
-    end_frame = config.get("end_frame", None)
 
     predictor = build_predictor(config)
 
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
-        raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
+        raise RuntimeError("Video konnte nicht geöffnet werden")
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    fps = float(cap.get(cv2.CAP_PROP_FPS))
+    fps_video = float(cap.get(cv2.CAP_PROP_FPS))
+
+    start_frame = int(config.get("start_frame", 0))
+    end_frame = config.get("end_frame")
 
     if end_frame is None:
         end_frame = total_frames
@@ -130,18 +116,26 @@ def main():
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
     rows = []
+    processed_frames = 0
+
+    total_start = time.perf_counter()
+
     frame_idx = start_frame
 
     while frame_idx < end_frame:
+
         ok, frame = cap.read()
+
         if not ok:
             break
 
         frame = resize_frame(frame, config)
 
-        t0 = time.perf_counter()
+        frame_start = time.perf_counter()
+
         outputs = predictor(frame)
-        inference_time_s = time.perf_counter() - t0
+
+        frame_runtime = time.perf_counter() - frame_start
 
         instances = outputs["instances"].to("cpu")
 
@@ -149,73 +143,81 @@ def main():
         draw_roi_boxes(vis, config)
 
         if instances.has("pred_boxes"):
+
             boxes = instances.pred_boxes.tensor.numpy()
-            scores = instances.scores.numpy() if instances.has("scores") else []
-            classes = instances.pred_classes.numpy() if instances.has("pred_classes") else []
+            scores = instances.scores.numpy()
+            classes = instances.pred_classes.numpy()
 
             for i, box in enumerate(boxes):
+
                 x1, y1, x2, y2 = box.astype(int)
 
                 w = int(x2 - x1)
                 h = int(y2 - y1)
-                cx = float(x1 + w / 2.0)
-                cy = float(y1 + h / 2.0)
-
-                score = float(scores[i]) if len(scores) > i else None
-                class_id = int(classes[i]) if len(classes) > i else None
 
                 rows.append(
                     {
-                        "method": "detectron2_mask_rcnn",
+                        "method": "detectron2_gpu",
                         "frame": frame_idx,
-                        "time_seconds": frame_idx / fps if fps > 0 else 0.0,
-                        "class_id": class_id,
-                        "score": score,
-                        "x": int(x1),
-                        "y": int(y1),
+                        "video_time_seconds": frame_idx / fps_video,
+                        "class_id": int(classes[i]),
+                        "score": float(scores[i]),
+                        "x": x1,
+                        "y": y1,
                         "w": w,
                         "h": h,
-                        "center_x": cx,
-                        "center_y": cy,
-                        "area": float(w * h),
-                        "inference_time_s": float(inference_time_s),
+                        "compute_time_s": frame_runtime,
                     }
-                )
-
-                cv2.rectangle(vis, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(
-                    vis,
-                    f"id={class_id} score={score:.2f}" if score is not None else f"id={class_id}",
-                    (x1, max(20, y1 - 8)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.45,
-                    (0, 255, 0),
-                    1,
-                    cv2.LINE_AA,
                 )
 
         if frame_idx % 10 == 0:
             cv2.imwrite(
-                os.path.join(debug_dir, f"frame_{frame_idx:06d}.png"),
+                os.path.join(
+                    debug_dir,
+                    f"frame_{frame_idx:06d}.png"
+                ),
                 vis,
             )
 
+        processed_frames += 1
         frame_idx += 1
+
+    total_runtime = time.perf_counter() - total_start
 
     cap.release()
 
     df = pd.DataFrame(rows)
 
-    if df.empty:
-        print("Warnung: Detectron2 hat keine Objekte erkannt.")
-    else:
+    if not df.empty:
         df.to_csv(output_csv, index=False)
 
-    print("Detectron2 inference abgeschlossen.")
-    print(f"Video: {video_path}")
-    print(f"Output: {output_csv}")
-    print(f"Debug: {debug_dir}")
-    print(f"Frames: {start_frame} bis {frame_idx}")
+    avg_frame_time = total_runtime / processed_frames
+    effective_fps = processed_frames / total_runtime
+
+    summary = pd.DataFrame(
+        [
+            {
+                "method": "detectron2_gpu",
+                "processed_frames": processed_frames,
+                "total_runtime_s": total_runtime,
+                "avg_frame_time_s": avg_frame_time,
+                "effective_fps": effective_fps,
+            }
+        ]
+    )
+
+    summary_path = output_csv.replace(".csv", "_benchmark.csv")
+    summary.to_csv(summary_path, index=False)
+
+    print("======================================")
+    print("Detectron2 Benchmark")
+    print("======================================")
+    print("Processed frames:", processed_frames)
+    print("Total runtime:", total_runtime)
+    print("Average frame time:", avg_frame_time)
+    print("Effective FPS:", effective_fps)
+    print("CSV:", output_csv)
+    print("Benchmark:", summary_path)
 
 
 if __name__ == "__main__":
