@@ -13,7 +13,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/te
 # Experiment Name
 # =========================================================
 
-EXPERIMENT_NAME="Farneback_Dense_CPU2"
+EXPERIMENT_NAME="Farneback_Dense_CPU3"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
@@ -200,32 +200,32 @@ for video in "$DATA"/*.MP4; do
     echo "Farneback CSV ready:"
     echo "$FARNEBACK_OUT"
 
+    
     # =========================================================
     # Visualization der OpenCV-Segmentierung
     # =========================================================
 
-    echo "Running visualization..."
+        echo "Running visualization..."
 
-    if apptainer exec \
-        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
-        -B "$PROJECT":"$PROJECT" \
-        "$CONTAINER" \
-        python -m src.visualization \
-            --config "$CONFIG_OUT" \
-        > "$OUT/logs/${name}_visualization.log" 2>&1; then
+        if apptainer exec \
+            -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+            -B "$PROJECT":"$PROJECT" \
+            "$CONTAINER" \
+            python -m src.visualization \
+                --config "$CONFIG_OUT" \
+            > "$OUT/logs/${name}_visualization.log" 2>&1; then
 
-        echo "Visualization finished: $name"
+            echo "Visualization finished: $name"
 
-    else
+        else
 
-        echo "Visualization failed for $name"
-        echo "$OUT/logs/${name}_visualization.log"
+            echo "Visualization failed for $name"
+            echo "$OUT/logs/${name}_visualization.log"
 
-    fi
+        fi
 
-    echo "Done: $name"
-
-done
+        echo "Done: $name"
+    done
 
 echo "======================================"
 echo "All videos processed."
