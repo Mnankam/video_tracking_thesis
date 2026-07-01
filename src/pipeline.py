@@ -49,6 +49,9 @@ class PipelineConfig:
     save_debug_frames: bool = False
     debug_dir: str = "outputs/debug"
 
+    save_binary_masks: bool = False
+    binary_mask_dir: str = "outputs/masks"
+
     segmentation_mode: str = "pipe_cv"
     segmentation_color_mode: str = "gray"
 
@@ -160,6 +163,12 @@ class VideoPipeline:
         if config.save_debug_frames:
             os.makedirs(config.debug_dir, exist_ok=True)
 
+        if config.save_binary_masks:
+            os.makedirs(config.binary_mask_dir, exist_ok=True)
+            os.makedirs(os.path.join(config.binary_mask_dir, "particle_bed"), exist_ok=True)
+            os.makedirs(os.path.join(config.binary_mask_dir, "inner_pipe"), exist_ok=True)
+            os.makedirs(os.path.join(config.binary_mask_dir, "combined"), exist_ok=True)
+
         if config.save_summary:
             os.makedirs(os.path.dirname(config.summary_csv), exist_ok=True)
 
@@ -217,6 +226,53 @@ class VideoPipeline:
 
         return max(candidates, key=lambda d: d.get("area", 0.0))
 
+    def _to_binary_mask(self, mask):
+        if mask is None:
+            return None
+
+        if len(mask.shape) == 3:
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+        _, binary = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        return binary
+
+    def _save_binary_masks(
+        self,
+        frame_idx: int,
+        particle_bed_mask=None,
+        inner_pipe_mask=None,
+        combined_mask=None,
+    ) -> None:
+        if not self.config.save_binary_masks:
+            return
+
+        if particle_bed_mask is not None:
+            binary = self._to_binary_mask(particle_bed_mask)
+            out_path = os.path.join(
+                self.config.binary_mask_dir,
+                "particle_bed",
+                f"frame_{frame_idx:06d}_particle_bed.png",
+            )
+            cv2.imwrite(out_path, binary)
+
+        if inner_pipe_mask is not None:
+            binary = self._to_binary_mask(inner_pipe_mask)
+            out_path = os.path.join(
+                self.config.binary_mask_dir,
+                "inner_pipe",
+                f"frame_{frame_idx:06d}_inner_pipe.png",
+            )
+            cv2.imwrite(out_path, binary)
+
+        if combined_mask is not None:
+            binary = self._to_binary_mask(combined_mask)
+            out_path = os.path.join(
+                self.config.binary_mask_dir,
+                "combined",
+                f"frame_{frame_idx:06d}_combined.png",
+            )
+            cv2.imwrite(out_path, binary)
+
     def _draw_center(self, vis, detection, color, label, radius=6):
         if detection is None:
             return
@@ -250,7 +306,7 @@ class VideoPipeline:
         particle_bed_detection=None,
     ) -> None:
         vis = frame.copy()
-                # Debug: feste ROIs anzeigen
+
         if self.config.inner_pipe_roi:
             x, y, w, h = map(int, self.config.inner_pipe_roi)
             cv2.rectangle(vis, (x, y), (x + w, y + h), (255, 255, 0), 2)
@@ -278,20 +334,6 @@ class VideoPipeline:
                 2,
                 cv2.LINE_AA,
             )
-
-        #if self.config.bed_edge_roi:
-        #    x, y, w, h = map(int, self.config.bed_edge_roi)
-        #    cv2.rectangle(vis, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        #    cv2.putText(
-        #        vis,
-        #        "bed_edge_roi",
-        #        (x, max(20, y - 8)),
-        #        cv2.FONT_HERSHEY_SIMPLEX,
-        #        0.5,
-        #        (255, 0, 0),
-        #        2,
-        #        cv2.LINE_AA,
-        #    )
 
         if bed_edge_y_smooth is not None:
             y = int(bed_edge_y_smooth)
@@ -400,6 +442,7 @@ class VideoPipeline:
                     bed_edge_y_smooth,
                 )
 
+                particle_bed_mask = mask.copy()
                 debug_mask = mask.copy()
 
                 particle_bed_detection = self._select_particle_bed_detection(detections)
@@ -413,6 +456,7 @@ class VideoPipeline:
                     pb_cx = pb_cy = ""
                     pb_area = ""
 
+                inner_pipe_mask = None
                 inner_pipe_detections = []
                 if self.inner_pipe_segmenter is not None:
                     inner_pipe_mask, inner_pipe_detections = self.inner_pipe_segmenter.segment(
@@ -433,6 +477,14 @@ class VideoPipeline:
                         (debug_mask.shape[1] - 1, int(bed_edge_y_smooth)),
                         255,
                         2,
+                    )
+
+                if self.config.save_binary_masks:
+                    self._save_binary_masks(
+                        frame_idx=frame_idx,
+                        particle_bed_mask=particle_bed_mask,
+                        inner_pipe_mask=inner_pipe_mask,
+                        combined_mask=debug_mask,
                     )
 
                 if self.tracker is not None:
@@ -541,6 +593,8 @@ class VideoPipeline:
                 "bed_edge_smoothing": self.config.bed_edge_smoothing,
                 "enable_inner_pipe": self.config.enable_inner_pipe,
                 "enable_optical_box": self.config.enable_optical_box,
+                "save_binary_masks": self.config.save_binary_masks,
+                "binary_mask_dir": self.config.binary_mask_dir,
             },
             self.evaluator.summary(),
             self.tracking_stats.to_dict(),
@@ -570,6 +624,8 @@ def load_config(path: str) -> PipelineConfig:
         enable_optical_box=data.get("enable_optical_box", True),
         save_debug_frames=data.get("save_debug_frames", False),
         debug_dir=data.get("debug_dir", "outputs/debug"),
+        save_binary_masks=data.get("save_binary_masks", False),
+        binary_mask_dir=data.get("binary_mask_dir", "outputs/masks"),
         segmentation_mode=data.get("segmentation_mode", "pipe_cv"),
         segmentation_color_mode=data.get("segmentation_color_mode", "gray"),
         detectron2_config_file=data.get("detectron2_config_file"),
