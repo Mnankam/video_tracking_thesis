@@ -228,12 +228,12 @@ The project uses the following software technologies:
 
 - Python 3.11.9
 - OpenCV: 4.13.0
-- NumPy: 2.4.2
-- Pandas: 3.0.1
+- NumPy: 2.4.4
+- Pandas: 3.0.2
 - Matplotlib
-- PyTorch: 2.10.0 + cu128
+- PyTorch: 2.11.0 + cu130
 - Detectron2
-- CUDA
+- CUDA: cu130
 - Apptainer
 - Slurm Workload Manager
 - Git / GitLab
