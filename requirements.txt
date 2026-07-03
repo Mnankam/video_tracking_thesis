@@ -24,11 +24,9 @@ torch>=2.1
 torchvision>=0.16
 torchaudio>=2.1
 
-# Detectron2 (optional – über Container installieren)
+# Detectron2 is installed separately inside the Apptainer container
 # detectron2 @ git+https://github.com/facebookresearch/detectron2.git
 
-# Config management
-pyyaml
 
 # CLI / scripts
 click
