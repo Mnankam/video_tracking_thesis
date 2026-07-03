@@ -226,7 +226,7 @@ The implemented benchmarking framework evaluates system performance using the fo
 
 The project uses the following software technologies:
 
-- Python 3.x
+- Python 3.11.9
 - OpenCV
 - NumPy
 - Pandas
