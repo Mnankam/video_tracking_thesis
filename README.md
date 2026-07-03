@@ -227,11 +227,11 @@ The implemented benchmarking framework evaluates system performance using the fo
 The project uses the following software technologies:
 
 - Python 3.11.9
-- OpenCV
-- NumPy
-- Pandas
+- OpenCV: 4.13.0
+- NumPy: 2.4.2
+- Pandas: 3.0.1
 - Matplotlib
-- PyTorch
+- PyTorch: 2.10.0 + cu128
 - Detectron2
 - CUDA
 - Apptainer
