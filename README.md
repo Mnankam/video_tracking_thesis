@@ -1,26 +1,53 @@
-The objective is the automated segmentation and position tracking of pipe structures and particle beds in high-speed flow loop experiments (~100,000 frames at 200 FPS).
+# Video Tracking Thesis
 
-Due to illumination flickering (50 Hz lab power supply) and the large data volume, manual analysis is infeasible. This project provides a fully automated and reproducible processing framework deployable on HPC infrastructure (GWDG SCC).
+## Project Overview
 
----
+This project focuses on the automated segmentation, motion estimation, and position tracking of relevant structures in high-speed experimental flow loop recordings.
 
-## Objectives
+The experimental setup generates large-scale video datasets, where individual recordings may contain more than 100,000 frames acquired at a frame rate of 200 FPS.
 
-- Automated illumination correction (deflickering)
-- Robust object segmentation (classical CV and deep learning)
-- Multi-frame object tracking
-- Bed edge estimation
+Due to the large data volume, illumination flickering caused by the 50 Hz laboratory power supply, motion blur, and visually complex backgrounds, manual frame-by-frame analysis is impractical.
+
+The goal of this project is to provide a fully automated, reproducible, and scalable video processing framework for scientific data analysis, deployable on High Performance Computing (HPC) infrastructure provided by the GWDG Scientific Compute Cluster (SCC).
+
+The implemented framework combines classical computer vision algorithms, optical flow based motion estimation, deep learning based segmentation, and large-scale batch processing for efficient analysis of experimental video data.
+
+
+
+## Project Objectives
+
+The system is designed to achieve the following objectives:
+
+- Automated illumination correction (FFT-based deflickering)
+- Robust object segmentation using classical computer vision methods
+- Deep learning based segmentation using Detectron2
+- Optical flow based motion estimation
+  - Lucas-Kanade sparse optical flow
+  - Farneback dense optical flow
+- Temporal object tracking across multiple frames
+- Particle bed edge estimation
 - Scalable batch processing using Slurm job arrays
-- GPU acceleration for segmentation models
-- Quantitative evaluation of segmentation and tracking performance
-- Performance benchmarking (CPU vs GPU)
+- GPU accelerated inference for deep learning segmentation models
+- Quantitative segmentation evaluation using Intersection over Union (IoU)
+- Performance benchmarking across CPU and GPU processing configurations
+- Reproducible large-scale execution on HPC infrastructure
 
----
+
+
+## Research Project Context
+
+This repository contains the implementation developed as part of a Master Thesis in Electrical Engineering and Information Technology at HAWK University of Applied Sciences.
+
+The research focuses on scalable computer vision pipelines for automated analysis of high-speed experimental flow loop recordings in scientific computing environments.
+
+The project investigates how modern computer vision, deep learning, and HPC technologies can be combined to process large experimental video datasets efficiently and reproducibly.
+
+
 
 ## Repository Structure
 
-```
-video-tracking-thesis/
+
+video_tracking_thesis/
 │
 ├── README.md
 ├── requirements.txt
@@ -28,97 +55,194 @@ video-tracking-thesis/
 ├── .gitlab-ci.yml
 │
 ├── src/
-│ ├── deflicker.py # FFT-based deflicker (50 Hz flicker removal)
-│ ├── segmentation.py # Pipe and bed segmentation (CV + DL)
-│ ├── tracking.py # Kalman-based multi-object tracking
-│ ├── bed_edge.py # Bed edge detection
-│ ├── pipeline.py # Main processing pipeline
-│ └── evaluation.py # Performance evaluation and statistics
+│   ├── deflicker.py
+│   │      FFT-based deflickering for 50 Hz illumination removal
+│   │
+│   ├── segmentation.py
+│   │      Classical OpenCV segmentation methods
+│   │
+│   ├── detectron2_inference.py
+│   │      Deep learning based segmentation using Detectron2
+│   │
+│   ├── optical_flow.py
+│   │      Lucas-Kanade and Farneback optical flow methods
+│   │
+│   ├── tracking.py
+│   │      Temporal object tracking and trajectory estimation
+│   │
+│   ├── bed_edge.py
+│   │      Particle bed edge estimation
+│   │
+│   ├── pipeline.py
+│   │      Main processing pipeline
+│   │
+│   └── evaluation.py
+│          Performance evaluation and statistics
 │
 ├── configs/
-│ └── config.yaml # Pipeline configuration (ROIs, deflicker, etc.)
+│   ├── config.yaml
+│   ├── test_inner_pipe_cv1.yaml
+│   └── detectron2_config.yaml
 │
 ├── scripts/
-│ ├── run_chunk.py # Chunk-based processing for large videos
-│ └── submit_array.sh # SLURM job submission (HPC execution)
+│   ├── run_chunk.py
+│   ├── submit_array.sh
+│   ├── run_batch.sh
+│   ├── run_batch_detectron2.sh
+│   └── run_batch_cuda.sh
 │
 ├── apptainer/
-│ └── detectron2.def # Container definition for GPU/HPC usage
+│   └── detectron2.def
 │
-├── outputs/ # Generated results (ignored in Git)
-│ ├── results.csv
-│ ├── summary.csv
-│ ├── debug/
-│ └── overlay_video.mp4
+├── outputs/
+│   ├── results.csv
+│   ├── summary.csv
+│   ├── masks/
+│   ├── debug/
+│   ├── overlay_video.mp4
+│   └── benchmark_results/
 │
 ├── tests/
-│ └── test_pipeline.py
+│   └── test_pipeline.py
 │
 └── docs/
-└── notes.md
-```
+    └── notes.md
 
----
 
-## Pipeline Architecture
 
-The processing workflow consists of:
 
-1. Frame extraction from raw video
-2. Illumination normalization (deflickering)
-3. Object segmentation
-   - Classical OpenCV-based methods
-   - Deep learning models (e.g., Detectron2)
-4. Multi-frame tracking
-5. Result export and visualization
+## Processing Pipeline Architecture
 
-The system is designed to process data in parallel chunks to enable scalable execution on HPC clusters.
+The implemented processing workflow consists of the following stages:
 
----
+1. Frame extraction from raw video recordings
+
+2. Illumination normalization and deflickering
+
+3. Region of Interest (ROI) extraction
+
+4. Object segmentation
+
+   - Classical OpenCV-based segmentation  
+   - Deep learning based segmentation using Detectron2
+
+5. Motion estimation using optical flow
+
+   - Lucas-Kanade sparse optical flow  
+   - Farneback dense optical flow
+
+6. Temporal object tracking
+
+7. Bed edge estimation
+
+8. Result export and visualization
+
+9. Quantitative performance benchmarking
+
+The framework is designed as a modular processing pipeline to support flexible experimentation and large-scale execution.
+
+
 
 ## HPC Deployment (GWDG SCC)
 
-The pipeline is executed on the SCC cluster using:
+Large-scale video processing experiments are executed on the GWDG Scientific Compute Cluster (SCC).
 
-- Slurm job arrays
-- Apptainer containers
-- GPU acceleration (if available)
+The framework supports both CPU-based and GPU-based execution.
 
-Example submission:
+The deployment architecture includes:
 
-```bash
-sbatch scripts/submit_array.sh
+- Slurm job arrays for large-scale batch execution
+- Apptainer containers for reproducible environments
+- CPU-based OpenCV processing
+- GPU accelerated Detectron2 inference
+- Experimental CUDA based optical flow implementations
+- Parallel execution across multiple compute nodes
+
+Example batch submission:
+
+sbatch run_batch_cuda.sh
 
 
-Local Development (WSL / Linux)
+Example pipeline execution inside Apptainer:
 
-Create virtual environment:
+apptainer exec \
+  -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+  container.sif \
+  python -m src.pipeline \
+  --config configs/config.yaml
+
+
+
+
+## Local Development (Linux / WSL)
+
+Create Python virtual environment:
+
+
 python3 -m venv venv
 source venv/bin/activate
+
+
+Install dependencies:
+
 pip install -r requirements.txt
 
-#########################################################
-Data Handling
+Run local pipeline:
 
-Raw video files are not included in this repository.
+python -m src.pipeline --config configs/config.yaml
 
-Due to large file sizes (~100k frames), processing is performed in chunk-based batches suitable for distributed HPC execution.
 
-#########################################################
 
-Evaluation Metrics:
 
- - Intersection over Union (IoU)
+## Data Handling
 
- - Tracking accuracy
+Raw experimental video files are not included in this repository.
 
- - Frame processing time
+High-speed recordings may contain more than 100,000 frames per video.
 
- - GPU vs CPU performance comparison
+Due to large file sizes and computational complexity, processing is performed using chunk-based execution suitable for distributed HPC environments.
 
- Author
 
-Serge Muriel Kouom Nankam
-M.Ing. Electrical Engineering and Information Technology
-HAWK University of Applied Sciences
+
+## Evaluation Metrics
+
+The implemented benchmarking framework evaluates system performance using the following quantitative metrics:
+
+- Intersection over Union (IoU) for segmentation quality evaluation
+- Average processing time per frame
+- Processing throughput (Frames Per Second)
+- CPU versus GPU runtime comparison
+- Scalability under increasing workload
+- Optical flow computational performance comparison
+
+
+
+## Technologies Used
+
+The project uses the following software technologies:
+
+- Python 3.x
+- OpenCV
+- NumPy
+- Pandas
+- Matplotlib
+- PyTorch
+- Detectron2
+- CUDA
+- Apptainer
+- Slurm Workload Manager
+- Git / GitLab
+- Linux / HPC Environment
+
+
+
+## Author
+
+**Serge Muriel Kouom Nankam**
+
+Master of Engineering (M.Eng.)  
+Electrical Engineering and Information Technology  
+
+HAWK University of Applied Sciences  
+Faculty of Engineering and Health  
 
