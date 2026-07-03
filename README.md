@@ -12,7 +12,7 @@ The goal of this project is to provide a fully automated, reproducible, and scal
 
 The implemented framework combines classical computer vision algorithms, optical flow based motion estimation, deep learning based segmentation, and large-scale batch processing for efficient analysis of experimental video data.
 
-
+---
 
 ## Project Objectives
 
@@ -32,7 +32,7 @@ The system is designed to achieve the following objectives:
 - Performance benchmarking across CPU and GPU processing configurations
 - Reproducible large-scale execution on HPC infrastructure
 
-
+---
 
 ## Research Project Context
 
@@ -42,11 +42,11 @@ The research focuses on scalable computer vision pipelines for automated analysi
 
 The project investigates how modern computer vision, deep learning, and HPC technologies can be combined to process large experimental video datasets efficiently and reproducibly.
 
-
+---
 
 ## Repository Structure
 
-
+```text
 video_tracking_thesis/
 │
 ├── README.md
@@ -107,9 +107,9 @@ video_tracking_thesis/
 │
 └── docs/
     └── notes.md
+```
 
-
-
+---
 
 ## Processing Pipeline Architecture
 
@@ -141,7 +141,7 @@ The implemented processing workflow consists of the following stages:
 
 The framework is designed as a modular processing pipeline to support flexible experimentation and large-scale execution.
 
-
+---
 
 ## HPC Deployment (GWDG SCC)
 
@@ -160,39 +160,44 @@ The deployment architecture includes:
 
 Example batch submission:
 
-sbatch run_batch_cuda.sh
-
+```bash
+sbatch scripts/submit_array.sh
+```
 
 Example pipeline execution inside Apptainer:
 
+```bash
 apptainer exec \
   -B /mnt/ceph-hdd:/mnt/ceph-hdd \
   container.sif \
   python -m src.pipeline \
   --config configs/config.yaml
+```
 
-
-
+---
 
 ## Local Development (Linux / WSL)
 
 Create Python virtual environment:
 
-
+```bash
 python3 -m venv venv
 source venv/bin/activate
-
+```
 
 Install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
 Run local pipeline:
 
+```bash
 python -m src.pipeline --config configs/config.yaml
+```
 
-
-
+---
 
 ## Data Handling
 
@@ -202,7 +207,7 @@ High-speed recordings may contain more than 100,000 frames per video.
 
 Due to large file sizes and computational complexity, processing is performed using chunk-based execution suitable for distributed HPC environments.
 
-
+---
 
 ## Evaluation Metrics
 
@@ -215,7 +220,7 @@ The implemented benchmarking framework evaluates system performance using the fo
 - Scalability under increasing workload
 - Optical flow computational performance comparison
 
-
+---
 
 ## Technologies Used
 
@@ -234,7 +239,7 @@ The project uses the following software technologies:
 - Git / GitLab
 - Linux / HPC Environment
 
-
+---
 
 ## Author
 
@@ -245,4 +250,6 @@ Electrical Engineering and Information Technology
 
 HAWK University of Applied Sciences  
 Faculty of Engineering and Health  
+
+---
 
