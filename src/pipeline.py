@@ -27,6 +27,7 @@ from src.evaluation import (
     merge_summaries,
     save_summary_csv,
 )
+from src.postprocessing import postprocess_mask
 
 
 @dataclass
@@ -51,6 +52,13 @@ class PipelineConfig:
 
     save_binary_masks: bool = False
     binary_mask_dir: str = "outputs/masks"
+
+    # Optional postprocessing of generated binary masks
+    enable_postprocessing: bool = False
+    postprocess_open_kernel: int = 3
+    postprocess_close_kernel: int = 5
+    postprocess_min_area: int = 100
+    postprocess_keep_largest: bool = True
 
     segmentation_mode: str = "pipe_cv"
     segmentation_color_mode: str = "gray"
@@ -443,7 +451,17 @@ class VideoPipeline:
                 )
 
                 particle_bed_mask = mask.copy()
-                debug_mask = mask.copy()
+
+                if self.config.enable_postprocessing:
+                    particle_bed_mask = postprocess_mask(
+                        particle_bed_mask,
+                        open_kernel_size=self.config.postprocess_open_kernel,
+                        close_kernel_size=self.config.postprocess_close_kernel,
+                        min_area=self.config.postprocess_min_area,
+                        keep_largest=self.config.postprocess_keep_largest,
+                    )
+
+                debug_mask = particle_bed_mask.copy()
 
                 particle_bed_detection = self._select_particle_bed_detection(detections)
 
@@ -463,6 +481,16 @@ class VideoPipeline:
                         frame,
                         bed_edge_y=bed_edge_y_smooth,
                     )
+
+                    if self.config.enable_postprocessing:
+                        inner_pipe_mask = postprocess_mask(
+                            inner_pipe_mask,
+                            open_kernel_size=self.config.postprocess_open_kernel,
+                            close_kernel_size=self.config.postprocess_close_kernel,
+                            min_area=self.config.postprocess_min_area,
+                            keep_largest=self.config.postprocess_keep_largest,
+                        )
+
                     debug_mask = cv2.bitwise_or(debug_mask, inner_pipe_mask)
 
                 optical_box_detections = []
@@ -595,6 +623,11 @@ class VideoPipeline:
                 "enable_optical_box": self.config.enable_optical_box,
                 "save_binary_masks": self.config.save_binary_masks,
                 "binary_mask_dir": self.config.binary_mask_dir,
+                "postprocessing_enabled": self.config.enable_postprocessing,
+                "postprocess_open_kernel": self.config.postprocess_open_kernel,
+                "postprocess_close_kernel": self.config.postprocess_close_kernel,
+                "postprocess_min_area": self.config.postprocess_min_area,
+                "postprocess_keep_largest": self.config.postprocess_keep_largest,
             },
             self.evaluator.summary(),
             self.tracking_stats.to_dict(),
@@ -626,6 +659,11 @@ def load_config(path: str) -> PipelineConfig:
         debug_dir=data.get("debug_dir", "outputs/debug"),
         save_binary_masks=data.get("save_binary_masks", False),
         binary_mask_dir=data.get("binary_mask_dir", "outputs/masks"),
+        enable_postprocessing=data.get("enable_postprocessing", False),
+        postprocess_open_kernel=data.get("postprocess_open_kernel", 3),
+        postprocess_close_kernel=data.get("postprocess_close_kernel", 5),
+        postprocess_min_area=data.get("postprocess_min_area", 100),
+        postprocess_keep_largest=data.get("postprocess_keep_largest", True),
         segmentation_mode=data.get("segmentation_mode", "pipe_cv"),
         segmentation_color_mode=data.get("segmentation_color_mode", "gray"),
         detectron2_config_file=data.get("detectron2_config_file"),
