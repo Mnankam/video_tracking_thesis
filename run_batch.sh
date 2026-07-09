@@ -13,7 +13,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/te
 # Experiment Name
 # =========================================================
 
-EXPERIMENT_NAME="Farneback_Dense_CPU3"
+EXPERIMENT_NAME="Farneback_Dense_CPU4"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
