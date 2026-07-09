@@ -34,6 +34,7 @@ from src.postprocessing import postprocess_mask
 class PipelineConfig:
     video_path: str
     output_csv: str
+    validation_csv: Optional[str] = None
 
     start_frame: int = 0
     end_frame: Optional[int] = None
@@ -159,6 +160,13 @@ class VideoPipeline:
         else:
             self.tracker = None
 
+        # Separate tracker for the inner pipe. This does not change the existing
+        # tracking output. It only creates an additional, validation-oriented
+        # trajectory for the inner pipe when inner-pipe segmentation is enabled.
+        self.inner_pipe_tracker = None
+        if config.enable_tracking and config.enable_inner_pipe:
+            self.inner_pipe_tracker = MultiObjectTracker(max_distance=80.0, max_missed=5)
+
         self.bed_edge_detector = None
         if config.enable_bed_edge:
             self.bed_edge_detector = BedEdgeDetector(
@@ -167,6 +175,11 @@ class VideoPipeline:
             )
 
         os.makedirs(os.path.dirname(config.output_csv), exist_ok=True)
+
+        if config.validation_csv:
+            validation_dir = os.path.dirname(config.validation_csv)
+            if validation_dir:
+                os.makedirs(validation_dir, exist_ok=True)
 
         if config.save_debug_frames:
             os.makedirs(config.debug_dir, exist_ok=True)
@@ -378,8 +391,55 @@ class VideoPipeline:
         inner_pipe_detections=None,
         optical_box_detections=None,
         particle_bed_detection=None,
+        inner_pipe_tracks=None,
     ) -> None:
         vis = frame.copy()
+
+        # Draw standard tracker outputs with visible track IDs. These tracks are
+        # kept separate from the inner-pipe validation track below.
+        for t in tracks or []:
+            try:
+                x, y, w, h = map(int, t["bbox"])
+                cx, cy = map(int, t["center"])
+                tid = t.get("track_id", "")
+            except Exception:
+                continue
+
+            cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.circle(vis, (cx, cy), 5, (0, 255, 255), -1)
+            cv2.putText(
+                vis,
+                f"ID {tid}",
+                (x, max(20, y - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2,
+                cv2.LINE_AA,
+            )
+
+        # Draw the dedicated inner-pipe validation track. This is the signal
+        # intended for FFT, downsampling, and later IMU comparison.
+        for t in inner_pipe_tracks or []:
+            try:
+                x, y, w, h = map(int, t["bbox"])
+                cx, cy = map(int, t["center"])
+                tid = t.get("track_id", "")
+            except Exception:
+                continue
+
+            cv2.rectangle(vis, (x, y), (x + w, y + h), (255, 0, 255), 2)
+            cv2.circle(vis, (cx, cy), 6, (255, 0, 255), -1)
+            cv2.putText(
+                vis,
+                f"inner_pipe_ID {tid}",
+                (x, min(vis.shape[0] - 10, y + h + 18)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.55,
+                (255, 0, 255),
+                2,
+                cv2.LINE_AA,
+            )
 
         if self.config.inner_pipe_roi:
             x, y, w, h = map(int, self.config.inner_pipe_roi)
@@ -470,7 +530,28 @@ class VideoPipeline:
         processed_frames = 0
         frame_idx = start
 
-        with open(self.config.output_csv, "w", newline="", encoding="utf-8") as f:
+        validation_csv = self.config.validation_csv
+        if not validation_csv:
+            base, ext = os.path.splitext(self.config.output_csv)
+            validation_csv = f"{base}_inner_pipe_track_timeseries.csv"
+
+        with open(self.config.output_csv, "w", newline="", encoding="utf-8") as f, \
+             open(validation_csv, "w", newline="", encoding="utf-8") as vf:
+            validation_writer = csv.writer(vf)
+            validation_writer.writerow(
+                [
+                    "frame", "time_seconds",
+                    "inner_pipe_track_id",
+                    "inner_pipe_track_x", "inner_pipe_track_y",
+                    "inner_pipe_track_w", "inner_pipe_track_h",
+                    "inner_pipe_track_center_x", "inner_pipe_track_center_y",
+                    "inner_pipe_track_area",
+                    "inner_pipe_seg_center_x", "inner_pipe_seg_center_y",
+                    "inner_pipe_track_valid",
+                ]
+            )
+
+
             writer = csv.writer(f)
 
             writer.writerow(
@@ -486,6 +567,12 @@ class VideoPipeline:
                     "optical_box_x", "optical_box_y", "optical_box_w", "optical_box_h",
                     "optical_box_center_x", "optical_box_center_y",
                     "processing_time_s",
+                    "inner_pipe_track_id",
+                    "inner_pipe_track_x", "inner_pipe_track_y",
+                    "inner_pipe_track_w", "inner_pipe_track_h",
+                    "inner_pipe_track_center_x", "inner_pipe_track_center_y",
+                    "inner_pipe_track_area",
+                    "inner_pipe_track_valid",
                 ]
             )
 
@@ -598,6 +685,21 @@ class VideoPipeline:
                 else:
                     tracks = []
 
+                # Dedicated inner-pipe tracking for validation. It is based on
+                # inner_pipe_detections and therefore does not alter the existing
+                # particle-bed or general-object tracking results.
+                if self.inner_pipe_tracker is not None:
+                    inner_pipe_tracker_result = self.inner_pipe_tracker.update(inner_pipe_detections)
+
+                    if isinstance(inner_pipe_tracker_result, dict):
+                        inner_pipe_tracks = [inner_pipe_tracker_result]
+                    elif inner_pipe_tracker_result is None:
+                        inner_pipe_tracks = []
+                    else:
+                        inner_pipe_tracks = inner_pipe_tracker_result
+                else:
+                    inner_pipe_tracks = []
+
                 elapsed = self.evaluator.stop_timer()
                 self.evaluator.add_track_count(len(tracks))
                 self.tracking_stats.update(tracks)
@@ -619,6 +721,50 @@ class VideoPipeline:
                 else:
                     ob_x = ob_y = ob_w = ob_h = ""
                     ob_cx = ob_cy = ""
+
+                # Select the dedicated inner-pipe track for validation. If more
+                # than one inner-pipe track exists, the track closest to the
+                # current inner-pipe segmentation center is selected.
+                selected_inner_pipe_track = None
+                if inner_pipe_tracks:
+                    if ip_cx != "" and ip_cy != "":
+                        selected_inner_pipe_track = min(
+                            inner_pipe_tracks,
+                            key=lambda tr: (tr["center"][0] - ip_cx) ** 2
+                            + (tr["center"][1] - ip_cy) ** 2,
+                        )
+                    else:
+                        selected_inner_pipe_track = inner_pipe_tracks[0]
+
+                if selected_inner_pipe_track is not None:
+                    ipt_x, ipt_y, ipt_w, ipt_h = selected_inner_pipe_track["bbox"]
+                    ipt_cx, ipt_cy = selected_inner_pipe_track["center"]
+                    ipt_track_id = selected_inner_pipe_track["track_id"]
+                    ipt_area = selected_inner_pipe_track.get("area", "")
+                    ipt_valid = 1
+                else:
+                    ipt_x = ipt_y = ipt_w = ipt_h = ""
+                    ipt_cx = ipt_cy = ""
+                    ipt_track_id = -1
+                    ipt_area = ""
+                    ipt_valid = 0
+
+                # Separate compact time series for FFT, downsampling, and later
+                # IMU comparison. This file has one row per frame.
+                validation_writer.writerow(
+                    [
+                        frame_idx,
+                        round(time_seconds, 6),
+                        ipt_track_id,
+                        ipt_x, ipt_y, ipt_w, ipt_h,
+                        round(ipt_cx, 3) if ipt_cx != "" else "",
+                        round(ipt_cy, 3) if ipt_cy != "" else "",
+                        round(ipt_area, 3) if ipt_area != "" else "",
+                        round(ip_cx, 3) if ip_cx != "" else "",
+                        round(ip_cy, 3) if ip_cy != "" else "",
+                        ipt_valid,
+                    ]
+                )
 
                 rows_to_write = tracks if tracks else [None]
 
@@ -656,6 +802,12 @@ class VideoPipeline:
                             round(ob_cx, 3) if ob_cx != "" else "",
                             round(ob_cy, 3) if ob_cy != "" else "",
                             round(elapsed, 6),
+                            ipt_track_id,
+                            ipt_x, ipt_y, ipt_w, ipt_h,
+                            round(ipt_cx, 3) if ipt_cx != "" else "",
+                            round(ipt_cy, 3) if ipt_cy != "" else "",
+                            round(ipt_area, 3) if ipt_area != "" else "",
+                            ipt_valid,
                         ]
                     )
 
@@ -670,6 +822,7 @@ class VideoPipeline:
                         inner_pipe_detections=inner_pipe_detections,
                         optical_box_detections=optical_box_detections,
                         particle_bed_detection=particle_bed_detection,
+                        inner_pipe_tracks=inner_pipe_tracks,
                     )
 
                 processed_frames += 1
@@ -681,6 +834,7 @@ class VideoPipeline:
             {
                 "video_path": self.config.video_path,
                 "output_csv": self.config.output_csv,
+                "validation_csv": validation_csv,
                 "start_frame": start,
                 "end_frame": end,
                 "processed_frames": processed_frames,
@@ -717,6 +871,7 @@ def load_config(path: str) -> PipelineConfig:
     return PipelineConfig(
         video_path=data["video_path"],
         output_csv=data["output_csv"],
+        validation_csv=data.get("validation_csv"),
         start_frame=data.get("start_frame", 0),
         end_frame=data.get("end_frame"),
         resize_width=data.get("resize_width"),
