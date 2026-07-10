@@ -3,9 +3,9 @@ set -euo pipefail
 
 CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
-DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/train"
+DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
 
-EXPERIMENT_NAME="Lucas_Kanade_CPU4"
+EXPERIMENT_NAME="Lucas_Kanade_CPU5"
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
@@ -108,7 +108,7 @@ for video in "$DATA"/*.MP4; do
             --out "$LK_ANIMATION" \
             --config "$CONFIG_OUT" \
             --start-frame 1 \
-            --end-frame 300 \
+            --end-frame 100000 \
         > "$OUT/logs/${name}_lucas_kanade_animation.log" 2>&1
 
     # =========================================================
