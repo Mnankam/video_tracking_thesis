@@ -1,5 +1,11 @@
 #!/bin/bash
 set -euo pipefail
+# =========================================================
+# OpenCV / FFmpeg video decoding configuration
+# =========================================================
+
+export OPENCV_FFMPEG_READ_ATTEMPTS=131072
+export APPTAINERENV_OPENCV_FFMPEG_READ_ATTEMPTS=131072
 
 # =========================================================
 # Container und Projektpfade
