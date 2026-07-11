@@ -3,9 +3,9 @@ set -euo pipefail
 
 CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
-DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
+DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/train"
 
-EXPERIMENT_NAME="Lucas_Kanade_CPU5"
+EXPERIMENT_NAME="Lucas_Kanade_CPU6"
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
