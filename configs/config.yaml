@@ -5,7 +5,7 @@ output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/o
 optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/test_inner_pipe_cv/optical_flow.csv
 
 start_frame: 0
-end_frame: 100000
+end_frame: 110000
 
 resize_width: 1280
 resize_height: 720

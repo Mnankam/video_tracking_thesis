@@ -5,7 +5,7 @@ CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/co
 PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/train"
 
-EXPERIMENT_NAME="Lucas_Kanade_CPU6"
+EXPERIMENT_NAME="Lucas_Kanade_CPU7"
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
@@ -108,7 +108,7 @@ for video in "$DATA"/*.MP4; do
             --out "$LK_ANIMATION" \
             --config "$CONFIG_OUT" \
             --start-frame 1 \
-            --end-frame 100000 \
+            --end-frame 110000 \
         > "$OUT/logs/${name}_lucas_kanade_animation.log" 2>&1
 
     # =========================================================

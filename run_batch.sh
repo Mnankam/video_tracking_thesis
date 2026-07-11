@@ -13,7 +13,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/tr
 # Experiment Name
 # =========================================================
 
-EXPERIMENT_NAME="Farneback_Dense_CPU7"
+EXPERIMENT_NAME="Farneback_Dense_CPU8"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
@@ -185,7 +185,7 @@ for video in "$DATA"/*.MP4; do
             --config "$CONFIG_OUT" \
             --out "$FARNEBACK_ANIMATION" \
             --start-frame 1 \
-            --end-frame 100000 \
+            --end-frame 110000 \
         > "$OUT/logs/${name}_farneback_animation.log" 2>&1; then
 
         echo "Farneback animation finished: $name"
