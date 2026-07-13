@@ -1,8 +1,5 @@
 from __future__ import annotations
-
-import argparse
-import os
-
+import argparse, os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -10,241 +7,293 @@ import numpy as np
 import pandas as pd
 
 
-def prepare_signal(df: pd.DataFrame, time_column: str, signal_column: str) -> tuple[np.ndarray, np.ndarray]:
-    missing = [c for c in (time_column, signal_column) if c not in df.columns]
+def prepare_signal(df, tc, sc):
+    missing = [c for c in (tc, sc) if c not in df.columns]
     if missing:
-        raise KeyError("Fehlende Spalten in der Eingabe-CSV: " + ", ".join(missing))
-
-    data = df[[time_column, signal_column]].copy()
-    data[time_column] = pd.to_numeric(data[time_column], errors="coerce")
-    data[signal_column] = pd.to_numeric(data[signal_column], errors="coerce")
-    data = data.dropna().sort_values(time_column)
-    data = data.groupby(time_column, as_index=False)[signal_column].mean()
-
-    if len(data) < 8:
-        raise ValueError("Zu wenige gültige Messpunkte für die Signalanalyse.")
-
-    return (
-        data[time_column].to_numpy(dtype=float),
-        data[signal_column].to_numpy(dtype=float),
-    )
+        raise KeyError("Fehlende Spalten: " + ", ".join(missing))
+    d = df[[tc, sc]].copy()
+    d[tc] = pd.to_numeric(d[tc], errors="coerce")
+    d[sc] = pd.to_numeric(d[sc], errors="coerce")
+    d = d.dropna().sort_values(tc).groupby(tc, as_index=False)[sc].mean()
+    if len(d) < 8:
+        raise ValueError("Zu wenige gültige Messpunkte.")
+    return d[tc].to_numpy(float), d[sc].to_numpy(float)
 
 
-def estimate_sampling_rate(time: np.ndarray) -> float:
-    dt = np.diff(time)
+def sampling_rate(t):
+    dt = np.diff(t)
     dt = dt[np.isfinite(dt) & (dt > 0)]
     if len(dt) == 0:
-        raise ValueError("Die Abtastzeit konnte nicht bestimmt werden.")
+        raise ValueError("Abtastzeit nicht bestimmbar.")
     return float(1.0 / np.median(dt))
 
 
-def detrend_linear(time: np.ndarray, signal: np.ndarray) -> np.ndarray:
-    coeffs = np.polyfit(time, signal, deg=1)
-    return signal - np.polyval(coeffs, time)
+def detrend(t, x):
+    p = np.polyfit(t, x, 1)
+    return x - np.polyval(p, t)
 
 
-def dominant_frequency(
-    time: np.ndarray,
-    signal: np.ndarray,
-    min_frequency: float,
-    max_frequency: float | None,
-) -> tuple[float, np.ndarray, np.ndarray]:
-    fs = estimate_sampling_rate(time)
-    centered = detrend_linear(time, signal)
-    windowed = centered * np.hanning(len(centered))
+def spectrum(t, x):
+    fs = sampling_rate(t)
+    y = detrend(t, x)
+    w = np.hanning(len(y))
+    Y = np.fft.rfft(y * w)
+    f = np.fft.rfftfreq(len(y), d=1.0 / fs)
+    cg = np.sum(w) / len(w)
+    a = np.abs(Y) / (len(y) * cg)
+    if len(a) > 2:
+        a[1:-1] *= 2.0
+    return f, a
 
-    spectrum = np.fft.rfft(windowed)
-    frequencies = np.fft.rfftfreq(len(windowed), d=1.0 / fs)
-    magnitude = np.abs(spectrum)
 
-    valid = (frequencies > 0.0) & (frequencies >= min_frequency)
-    if max_frequency is not None:
-        valid &= frequencies <= max_frequency
-
+def dominant_frequency(t, x, fmin, fmax):
+    f, a = spectrum(t, x)
+    valid = (f >= fmin) & (f > 0)
+    if fmax is not None:
+        valid &= f <= fmax
     if not np.any(valid):
-        raise ValueError("Kein gültiger Frequenzbereich für die FFT vorhanden.")
-
-    valid_indices = np.where(valid)[0]
-    peak_index = valid_indices[np.argmax(magnitude[valid])]
-    return float(frequencies[peak_index]), frequencies, magnitude
-
-
-def estimate_amplitude(signal: np.ndarray) -> float:
-    low = np.percentile(signal, 5)
-    high = np.percentile(signal, 95)
-    return float((high - low) / 2.0)
+        raise ValueError("Kein gültiger FFT-Frequenzbereich.")
+    ids = np.where(valid)[0]
+    i = ids[np.argmax(a[valid])]
+    return float(f[i]), f, a
 
 
-def downsample_signal(
-    time: np.ndarray,
-    signal: np.ndarray,
-    original_fs: float,
-    target_fs: float,
-) -> tuple[np.ndarray, np.ndarray, float]:
+def robust_amplitude(x):
+    return float((np.percentile(x, 95) - np.percentile(x, 5)) / 2.0)
+
+
+def relerr(ref, value):
+    if np.isclose(ref, 0):
+        return np.nan
+    return float(abs(value - ref) / abs(ref) * 100.0)
+
+
+def lowpass_fir(fs, target_fs, taps=101, cutoff_ratio=0.90):
+    if taps % 2 == 0:
+        taps += 1
+    cutoff = cutoff_ratio * target_fs / 2.0
+    n = np.arange(taps) - (taps - 1) / 2.0
+    fc = cutoff / fs
+    h = 2.0 * fc * np.sinc(2.0 * fc * n)
+    h *= np.hamming(taps)
+    h /= np.sum(h)
+    return h
+
+
+def zero_phase_fir(x, h):
+    pad = min(len(x) - 1, 3 * (len(h) - 1))
+    if pad < 1:
+        return np.convolve(x, h, mode="same")
+    xp = np.pad(x, pad, mode="reflect")
+    y = np.convolve(xp, h, mode="same")
+    return y[pad:-pad]
+
+
+def downsample(t, x, original_fs, target_fs):
+    tol = max(1e-6, abs(original_fs) * 1e-6)
     if target_fs <= 0:
-        raise ValueError("Die Zielabtastrate muss größer als 0 Hz sein.")
-
-    tolerance = max(1e-6, abs(original_fs) * 1e-6)
-    if target_fs > original_fs + tolerance:
-        raise ValueError(
-            f"Zielabtastrate {target_fs:.6f} Hz ist größer als "
-            f"die Originalabtastrate {original_fs:.6f} Hz."
-        )
-
+        raise ValueError("Zielabtastrate muss > 0 Hz sein.")
+    if target_fs > original_fs + tol:
+        raise ValueError("Zielabtastrate ist größer als Originalabtastrate.")
     step = max(1, int(round(original_fs / target_fs)))
-    ds_time = time[::step]
-    ds_signal = signal[::step]
     actual_fs = original_fs / step
-    return ds_time, ds_signal, float(actual_fs)
+    if step == 1:
+        return t.copy(), x.copy(), float(actual_fs), 0
+    h = lowpass_fir(original_fs, actual_fs)
+    xf = zero_phase_fir(x, h)
+    return t[::step], xf[::step], float(actual_fs), 1
 
 
-def relative_error(reference: float, value: float) -> float:
-    if np.isclose(reference, 0.0):
-        return float("nan")
-    return float(abs(value - reference) / abs(reference) * 100.0)
+def peak_near(f, a, target, width, fmax):
+    lo = max(0.0, target - width)
+    hi = min(fmax, target + width)
+    valid = (f >= lo) & (f <= hi)
+    if not np.any(valid):
+        return np.nan, np.nan
+    ids = np.where(valid)[0]
+    i = ids[np.argmax(a[valid])]
+    return float(f[i]), float(a[i])
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Validate the tracked inner-pipe motion signal using FFT and temporal downsampling."
+def harmonic_table(t, x, f0, nh, width, fmax):
+    f, a = spectrum(t, x)
+    nyq = sampling_rate(t) / 2.0
+    limit = min(nyq, fmax)
+    rows = []
+    for k in range(1, nh + 1):
+        expected = k * f0
+        observable = expected < nyq and expected <= limit
+        if observable:
+            fm, am = peak_near(f, a, expected, width, limit)
+        else:
+            fm, am = np.nan, np.nan
+        rows.append({
+            "harmonic_order": k,
+            "expected_frequency_hz": expected,
+            "measured_frequency_hz": fm,
+            "spectral_amplitude_px": am,
+            "observable_below_nyquist": int(observable),
+        })
+    return pd.DataFrame(rows)
+
+
+def main():
+    p = argparse.ArgumentParser(
+        description="Inner-pipe validation with anti-aliasing and harmonic analysis."
     )
-    parser.add_argument("--csv", required=True)
-    parser.add_argument("--out-dir", required=True)
-    parser.add_argument("--time-column", default="time_seconds")
-    parser.add_argument("--signal-column", default="inner_pipe_track_center_x")
-    parser.add_argument(
-        "--target-fps",
-        nargs="+",
-        type=float,
-        default=[200.0, 100.0, 50.0, 25.0, 20.0, 10.0],
-    )
-    parser.add_argument("--min-frequency", type=float, default=0.5)
-    parser.add_argument("--max-frequency", type=float, default=None)
-    args = parser.parse_args()
+    p.add_argument("--csv", required=True)
+    p.add_argument("--out-dir", required=True)
+    p.add_argument("--time-column", default="time_seconds")
+    p.add_argument("--signal-column", default="inner_pipe_track_center_x")
+    p.add_argument("--target-fps", nargs="+", type=float,
+                   default=[200, 100, 50, 25, 20, 10])
+    p.add_argument("--min-frequency", type=float, default=0.5)
+    p.add_argument("--max-frequency", type=float, default=50.0)
+    p.add_argument("--harmonics", type=int, default=6)
+    p.add_argument("--harmonic-search-width", type=float, default=0.25)
+    p.add_argument("--acceptance-threshold-percent", type=float, default=10.0)
+    args = p.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
-    if not os.path.isfile(args.csv):
-        raise FileNotFoundError(f"Eingabe-CSV wurde nicht gefunden: {args.csv}")
-
     df = pd.read_csv(args.csv)
-    time, signal = prepare_signal(df, args.time_column, args.signal_column)
+    t, x = prepare_signal(df, args.time_column, args.signal_column)
 
-    original_fs = estimate_sampling_rate(time)
-    tolerance = max(1e-6, abs(original_fs) * 1e-6)
-    duration = float(time[-1] - time[0])
-    if duration <= 0:
-        raise ValueError("Die Signaldauer muss größer als 0 Sekunden sein.")
+    fs = sampling_rate(t)
+    duration = float(t[-1] - t[0])
+    nyq = fs / 2.0
+    fmax = min(args.max_frequency, nyq)
+    f0, f_ref, a_ref = dominant_frequency(t, x, args.min_frequency, fmax)
+    amp_ref = robust_amplitude(x)
 
-    frequency_resolution = 1.0 / duration
-    original_nyquist = original_fs / 2.0
-    original_max_frequency = (
-        original_nyquist
-        if args.max_frequency is None
-        else min(args.max_frequency, original_nyquist)
+    href = harmonic_table(
+        t, x, f0, args.harmonics, args.harmonic_search_width, fmax
     )
+    href.to_csv(os.path.join(args.out_dir, "harmonic_reference.csv"), index=False)
+    ref = href.set_index("harmonic_order").to_dict("index")
 
-    original_frequency, frequencies, magnitude = dominant_frequency(
-        time,
-        signal,
-        args.min_frequency,
-        original_max_frequency,
-    )
-    original_amplitude = estimate_amplitude(signal)
+    ds_rows, sp_rows, spectra = [], [], {}
 
-    rows: list[dict[str, float | int]] = []
-
-    for requested_fs in args.target_fps:
-        if requested_fs <= 0:
-            print(f"Übersprungen: ungültige Zielabtastrate {requested_fs} Hz.")
+    for requested in args.target_fps:
+        if requested > fs + max(1e-6, fs * 1e-6):
+            print(f"Übersprungen: {requested:.6f} Hz > {fs:.6f} Hz")
             continue
 
-        if requested_fs > original_fs + tolerance:
-            print(
-                f"Übersprungen: {requested_fs:.6f} Hz > "
-                f"Originalabtastrate {original_fs:.6f} Hz."
+        td, xd, fsd, aa = downsample(t, x, fs, requested)
+        if len(xd) < 8:
+            continue
+
+        nd = fsd / 2.0
+        fdmax = min(args.max_frequency, nd)
+        fd, ff, aa_spec = dominant_frequency(
+            td, xd, args.min_frequency, fdmax
+        )
+        amp = robust_amplitude(xd)
+        ef = relerr(f0, fd)
+        ea = relerr(amp_ref, amp)
+
+        ds_rows.append({
+            "requested_sampling_rate_hz": requested,
+            "actual_sampling_rate_hz": fsd,
+            "nyquist_frequency_hz": nd,
+            "number_of_samples": len(xd),
+            "duration_s": float(td[-1] - td[0]),
+            "dominant_frequency_hz": fd,
+            "frequency_relative_error_percent": ef,
+            "amplitude_px": amp,
+            "amplitude_relative_error_percent": ea,
+            "nyquist_condition_satisfied_for_fundamental": int(f0 < nd),
+            "frequency_within_acceptance_threshold": int(
+                ef <= args.acceptance_threshold_percent
+            ),
+            "amplitude_within_acceptance_threshold": int(
+                ea <= args.acceptance_threshold_percent
+            ),
+            "anti_aliasing_applied": aa,
+        })
+
+        spectra[fsd] = (ff, aa_spec)
+        hd = harmonic_table(
+            td, xd, f0, args.harmonics,
+            args.harmonic_search_width, fdmax
+        )
+
+        for _, r in hd.iterrows():
+            k = int(r["harmonic_order"])
+            rr = ref[k]
+            observable = int(r["observable_below_nyquist"])
+            efh = relerr(rr["measured_frequency_hz"], r["measured_frequency_hz"])                 if observable and np.isfinite(r["measured_frequency_hz"]) else np.nan
+            eah = relerr(rr["spectral_amplitude_px"], r["spectral_amplitude_px"])                 if observable and np.isfinite(r["spectral_amplitude_px"]) else np.nan
+            preserved = int(
+                observable and np.isfinite(efh) and np.isfinite(eah)
+                and efh <= args.acceptance_threshold_percent
+                and eah <= args.acceptance_threshold_percent
             )
-            continue
+            sp_rows.append({
+                "requested_sampling_rate_hz": requested,
+                "actual_sampling_rate_hz": fsd,
+                "nyquist_frequency_hz": nd,
+                "harmonic_order": k,
+                "expected_frequency_hz": r["expected_frequency_hz"],
+                "reference_frequency_hz": rr["measured_frequency_hz"],
+                "measured_frequency_hz": r["measured_frequency_hz"],
+                "frequency_relative_error_percent": efh,
+                "reference_spectral_amplitude_px": rr["spectral_amplitude_px"],
+                "measured_spectral_amplitude_px": r["spectral_amplitude_px"],
+                "spectral_amplitude_relative_error_percent": eah,
+                "observable_below_nyquist": observable,
+                "preserved_within_acceptance_threshold": preserved,
+            })
 
-        ds_time, ds_signal, actual_fs = downsample_signal(
-            time,
-            signal,
-            original_fs,
-            requested_fs,
-        )
+    ds = pd.DataFrame(ds_rows)
+    sp = pd.DataFrame(sp_rows)
+    ds.to_csv(os.path.join(args.out_dir, "downsampling_validation.csv"), index=False)
+    sp.to_csv(os.path.join(args.out_dir, "spectral_preservation.csv"), index=False)
 
-        if len(ds_signal) < 8:
-            print(
-                f"Übersprungen: {actual_fs:.6f} Hz liefert "
-                f"nur {len(ds_signal)} Punkte."
-            )
-            continue
+    summary = pd.DataFrame([{
+        "input_csv": args.csv,
+        "signal_column": args.signal_column,
+        "number_of_samples": len(x),
+        "duration_s": duration,
+        "original_sampling_rate_hz": fs,
+        "original_nyquist_frequency_hz": nyq,
+        "frequency_resolution_hz": 1.0 / duration,
+        "original_dominant_frequency_hz": f0,
+        "original_amplitude_px": amp_ref,
+        "signal_min_px": float(np.min(x)),
+        "signal_max_px": float(np.max(x)),
+        "signal_mean_px": float(np.mean(x)),
+        "signal_std_px": float(np.std(x, ddof=1)),
+        "number_of_harmonics_evaluated": args.harmonics,
+        "acceptance_threshold_percent": args.acceptance_threshold_percent,
+        "anti_aliasing_downsampling": 1,
+    }])
+    summary.to_csv(os.path.join(args.out_dir, "validation_summary.csv"), index=False)
 
-        nyquist_frequency = actual_fs / 2.0
-        analysis_max_frequency = (
-            nyquist_frequency
-            if args.max_frequency is None
-            else min(args.max_frequency, nyquist_frequency)
-        )
-
-        frequency, _, _ = dominant_frequency(
-            ds_time,
-            ds_signal,
-            args.min_frequency,
-            analysis_max_frequency,
-        )
-        amplitude = estimate_amplitude(ds_signal)
-
-        rows.append(
-            {
-                "requested_sampling_rate_hz": requested_fs,
-                "actual_sampling_rate_hz": actual_fs,
-                "nyquist_frequency_hz": nyquist_frequency,
-                "number_of_samples": len(ds_signal),
-                "duration_s": float(ds_time[-1] - ds_time[0]),
-                "dominant_frequency_hz": frequency,
-                "frequency_relative_error_percent": relative_error(
-                    original_frequency,
-                    frequency,
-                ),
-                "amplitude_px": amplitude,
-                "amplitude_relative_error_percent": relative_error(
-                    original_amplitude,
-                    amplitude,
-                ),
-                "nyquist_condition_satisfied": int(
-                    actual_fs >= 2.0 * original_frequency
-                ),
-            }
-        )
-
-    results = pd.DataFrame(rows)
-    results_path = os.path.join(args.out_dir, "downsampling_validation.csv")
-    results.to_csv(results_path, index=False)
-
-    summary = pd.DataFrame(
-        [
-            {
-                "input_csv": args.csv,
-                "signal_column": args.signal_column,
-                "number_of_samples": len(signal),
-                "duration_s": duration,
-                "original_sampling_rate_hz": original_fs,
-                "original_nyquist_frequency_hz": original_nyquist,
-                "frequency_resolution_hz": frequency_resolution,
-                "original_dominant_frequency_hz": original_frequency,
-                "original_amplitude_px": original_amplitude,
-                "signal_min_px": float(np.min(signal)),
-                "signal_max_px": float(np.max(signal)),
-                "signal_mean_px": float(np.mean(signal)),
-                "signal_std_px": float(np.std(signal, ddof=1)),
-            }
-        ]
+    ps = sp.groupby(
+        ["requested_sampling_rate_hz", "actual_sampling_rate_hz",
+         "nyquist_frequency_hz"], as_index=False
+    ).agg(
+        number_of_reference_harmonics=("harmonic_order", "count"),
+        number_observable_below_nyquist=("observable_below_nyquist", "sum"),
+        number_preserved_within_threshold=(
+            "preserved_within_acceptance_threshold", "sum"
+        ),
     )
-    summary_path = os.path.join(args.out_dir, "validation_summary.csv")
-    summary.to_csv(summary_path, index=False)
+    ps["observable_fraction_percent"] = (
+        100 * ps["number_observable_below_nyquist"]
+        / ps["number_of_reference_harmonics"]
+    )
+    ps["preserved_fraction_percent"] = (
+        100 * ps["number_preserved_within_threshold"]
+        / ps["number_of_reference_harmonics"]
+    )
+    ps.to_csv(
+        os.path.join(args.out_dir, "spectral_preservation_summary.csv"),
+        index=False
+    )
 
     plt.figure(figsize=(12, 4))
-    plt.plot(time, signal)
+    plt.plot(t, x)
     plt.xlabel("Time [s]")
     plt.ylabel("Inner pipe position x [pixel]")
     plt.title("GX010044 - Inner pipe tracking signal")
@@ -254,58 +303,67 @@ def main() -> None:
     plt.close()
 
     plt.figure(figsize=(10, 4))
-    plt.plot(frequencies, magnitude)
-    plt.axvline(
-        original_frequency,
-        linestyle="--",
-        label=f"Dominant frequency = {original_frequency:.3f} Hz",
-    )
-    plt.xlim(left=0, right=original_max_frequency)
+    plt.plot(f_ref, a_ref)
+    for k in range(1, args.harmonics + 1):
+        if k * f0 <= fmax:
+            plt.axvline(k * f0, linestyle="--" if k == 1 else ":")
+    plt.xlim(0, fmax)
     plt.xlabel("Frequency [Hz]")
-    plt.ylabel("FFT magnitude")
-    plt.title("Frequency spectrum of the tracked inner-pipe motion")
+    plt.ylabel("Single-sided amplitude [pixel]")
+    plt.title("Frequency spectrum and expected harmonics")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.out_dir, "harmonic_spectrum.png"), dpi=300)
+    plt.close()
+
+    sd = ds.sort_values("actual_sampling_rate_hz")
+    plt.figure(figsize=(10, 4))
+    plt.plot(sd["actual_sampling_rate_hz"],
+             sd["frequency_relative_error_percent"], marker="o",
+             label="Dominant frequency error")
+    plt.plot(sd["actual_sampling_rate_hz"],
+             sd["amplitude_relative_error_percent"], marker="o",
+             label="Robust amplitude error")
+    plt.axhline(args.acceptance_threshold_percent, linestyle="--",
+                label=f"Acceptance threshold = {args.acceptance_threshold_percent:.1f}%")
+    plt.xlabel("Sampling rate [Hz]")
+    plt.ylabel("Relative error [%]")
+    plt.title("Validation errors after anti-aliased downsampling")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(args.out_dir, "inner_pipe_fft.png"), dpi=300)
+    plt.savefig(os.path.join(args.out_dir, "downsampling_error_comparison.png"),
+                dpi=300)
     plt.close()
 
-    if not results.empty:
-        sorted_results = results.sort_values("actual_sampling_rate_hz")
-        plt.figure(figsize=(10, 4))
-        plt.plot(
-            sorted_results["actual_sampling_rate_hz"],
-            sorted_results["dominant_frequency_hz"],
-            marker="o",
-        )
-        plt.axhline(
-            original_frequency,
-            linestyle="--",
-            label=f"Reference = {original_frequency:.3f} Hz",
-        )
-        plt.xlabel("Sampling rate [Hz]")
-        plt.ylabel("Dominant frequency [Hz]")
-        plt.title("Influence of temporal downsampling")
-        plt.grid(True)
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(
-            os.path.join(args.out_dir, "downsampling_frequency_comparison.png"),
-            dpi=300,
-        )
-        plt.close()
+    plt.figure(figsize=(12, 5))
+    for fsd in sorted(spectra, reverse=True):
+        ff, aa = spectra[fsd]
+        valid = ff <= min(args.max_frequency, fsd / 2.0)
+        plt.plot(ff[valid], aa[valid], label=f"{fsd:.0f} Hz")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Single-sided amplitude [pixel]")
+    plt.title("Spectral preservation after anti-aliased downsampling")
+    plt.grid(True)
+    plt.legend(title="Sampling rate")
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.out_dir, "downsampling_spectrum_comparison.png"),
+                dpi=300)
+    plt.close()
 
     print("Validation completed.")
-    print(f"Input CSV: {args.csv}")
-    print(f"Signal column: {args.signal_column}")
-    print(f"Input samples: {len(signal)}")
+    print(f"Input samples: {len(x)}")
     print(f"Duration: {duration:.6f} s")
-    print(f"Sampling rate: {original_fs:.6f} Hz")
-    print(f"Frequency resolution: {frequency_resolution:.6f} Hz")
-    print(f"Dominant frequency: {original_frequency:.6f} Hz")
-    print(f"Amplitude: {original_amplitude:.6f} px")
-    print(f"Summary: {summary_path}")
-    print(f"Downsampling results: {results_path}")
+    print(f"Sampling rate: {fs:.6f} Hz")
+    print(f"Frequency resolution: {1.0 / duration:.6f} Hz")
+    print(f"Dominant frequency: {f0:.6f} Hz")
+    print(f"Robust amplitude: {amp_ref:.6f} px")
+    print("Anti-aliasing: enabled")
+    print("Created: validation_summary.csv")
+    print("Created: downsampling_validation.csv")
+    print("Created: harmonic_reference.csv")
+    print("Created: spectral_preservation.csv")
+    print("Created: spectral_preservation_summary.csv")
 
 
 if __name__ == "__main__":
