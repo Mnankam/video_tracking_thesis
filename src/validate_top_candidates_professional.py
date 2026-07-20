@@ -32,16 +32,53 @@ from validate_video_vs_imu_v2 import ValidationConfig, validate_video_vs_imu
 LOGGER=logging.getLogger("validate_top_candidates")
 
 
-def load_candidates(csv_file):
-    rows=[]
-    with open(csv_file,newline="",encoding="utf-8") as f:
-        reader=csv.DictReader(f)
-        for i,row in enumerate(reader,1):
+ddef load_candidates(csv_file, video_id=None):
+    rows = []
+
+    with open(csv_file, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+
+        if not reader.fieldnames:
+            raise ValueError(f"Candidate CSV has no header: {csv_file}")
+
+        for i, row in enumerate(reader, 1):
+            row_video_id = row.get("video_id", "").strip()
+
+            if video_id and row_video_id and row_video_id.upper() != video_id.upper():
+                continue
+
+            imu_path = row.get("imu_csv") or row.get("imu_path")
+
+            if not imu_path:
+                raise KeyError(
+                    "Candidate CSV must contain either 'imu_csv' or 'imu_path'. "
+                    f"Available columns: {reader.fieldnames}"
+                )
+
+            rank_value = (
+                row.get("rank")
+                or row.get("rank_for_video")
+                or i
+            )
+
+            measurement_id = (
+                row.get("imu_measurement_id")
+                or Path(imu_path).parent.name
+            )
+
             rows.append({
-                "rank":int(row.get("rank",i)),
-                "imu_csv":row["imu_csv"],
-                "label":row.get("label",Path(row["imu_csv"]).parent.name)
+                "rank": int(rank_value),
+                "imu_csv": imu_path,
+                "label": measurement_id,
+                "video_id": row_video_id,
+                "search_score": row.get("score"),
             })
+
+    if not rows:
+        raise ValueError(
+            f"No candidates found for video_id={video_id!r} in {csv_file}"
+        )
+
     return rows
 
 
