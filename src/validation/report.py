@@ -785,26 +785,26 @@ code {{ overflow-wrap: anywhere; }}
 
 <section>
     <h2>Kennzahlen</h2>
-    {_html_table(report.get("metrics", {{}}), precision)}
+    {_html_table(report.get("metrics", {}), precision)}
 </section>
 
 <section>
     <h2>Synchronisation</h2>
-    {_html_table(report.get("synchronization", {{}}), precision)}
+    {_html_table(report.get("synchronization", {}), precision)}
 </section>
 
 <section>
     <h2>Eingabedaten und Verarbeitung</h2>
-    {_html_table(report.get("inputs", {{}}), precision)}
-    {_html_table(report.get("preprocessing", {{}}), precision)}
+    {_html_table(report.get("inputs", {}), precision)}
+    {_html_table(report.get("preprocessing", {}), precision)}
 </section>
 
 <section>
     <h2>Bewertung</h2>
     <p><strong>Status:</strong>
-    {html.escape(str(report.get("assessment", {{}}).get("status", "n/a")))}</p>
+    {html.escape(str(report.get("assessment", {}).get("status", "n/a")))}</p>
     {observation_html}
-    <p>{html.escape(str(report.get("assessment", {{}}).get("note", "")))}</p>
+    <p>{html.escape(str(report.get("assessment", {}).get("note", "")))}</p>
 </section>
 
 <section>
@@ -819,7 +819,7 @@ code {{ overflow-wrap: anywhere; }}
 
 <section>
     <h2>Laufzeitumgebung</h2>
-    {_html_table(report.get("environment", {{}}), precision)}
+    {_html_table(report.get("environment", {}), precision)}
 </section>
 </main>
 </body>
