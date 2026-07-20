@@ -92,7 +92,16 @@ def detect_video_signal(df: pd.DataFrame, preferred: str) -> str:
 
 
 def detect_video_time(df: pd.DataFrame, explicit: Optional[str]) -> tuple[np.ndarray, str]:
-    names = ([explicit] if explicit else []) + ["time_s", "time", "timestamp_s", "timestamp", "seconds", "t", "elapsed_time_s"]
+    names = ([explicit] if explicit else []) + [
+    "time_seconds",
+    "time_s",
+    "time",
+    "timestamp_s",
+    "timestamp",
+    "seconds",
+    "t",
+    "elapsed_time_s",
+]
     for col in names:
         if col and col in df.columns:
             values = pd.to_numeric(df[col], errors="coerce").to_numpy(float)
@@ -315,4 +324,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())    
