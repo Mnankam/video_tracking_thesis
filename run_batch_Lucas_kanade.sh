@@ -11,7 +11,7 @@ CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/co
 PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
 
-EXPERIMENT_NAME="Lucas_Kanade_CPU7"
+EXPERIMENT_NAME="Lucas_Kanade_CPU8"
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
