@@ -16,7 +16,7 @@ INPUT_CSV = Path(
 OUTPUT_CSV = Path(
     "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/"
     "video_tracking_thesis/outputs/Lucas_Kanade_CPU_1/"
-    "GX010262_lk_video_acceleration_m/s^2.csv"
+    "GX010262_lk_video_acceleration_m_s2.csv.csv"
 )
 
 # Zunächst nur die als Rohr-/Reflexionsstruktur definierten Punkte.
