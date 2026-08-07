@@ -13,13 +13,13 @@ export APPTAINERENV_OPENCV_FFMPEG_READ_ATTEMPTS=131072
 
 CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
 PROJECT="$HOME/projects/video_tracking_thesis"
-DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/test"
+DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation"
 
 # =========================================================
 # Experiment Name
 # =========================================================
 
-EXPERIMENT_NAME="Farneback_Dense_CPU8"
+EXPERIMENT_NAME="Farneback_Dense_CPU9"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
