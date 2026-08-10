@@ -231,6 +231,7 @@ done < <(
 # ---------------------------------------------------------------------------
 
 echo
+
 echo "============================================================"
 echo "Metadata extraction completed"
 echo "============================================================"
@@ -240,3 +241,5 @@ echo "Failed          : $failed_count"
 echo
 echo "Metadata file:"
 echo "$OUTPUT_CSV"
+echo "Metadata written to: $OUTPUT_CSV"
+
