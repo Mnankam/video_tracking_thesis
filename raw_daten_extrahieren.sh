@@ -5,19 +5,80 @@ set -u
 VIDEO_DIR="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_sides/video_side"
 OUTPUT_CSV="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_sides/video_metadata.csv"
 
-echo "video_id,filename,creation_time,duration_s,fps,width,height,frames,frame_count_source,file_size_bytes" > "$OUTPUT_CSV"
+# ---------------------------------------------------------------------------
+# Check requirements
+# ---------------------------------------------------------------------------
 
-find "$VIDEO_DIR" -maxdepth 1 -type f \( \
-    -iname "*.mp4" -o \
-    -iname "*.mov" \
-\) -print0 | sort -z | while IFS= read -r -d '' video; do
+if [[ ! -d "$VIDEO_DIR" ]]; then
+    echo "ERROR: Video directory does not exist:"
+    echo "       $VIDEO_DIR"
+    exit 1
+fi
+
+if ! command -v ffprobe >/dev/null 2>&1; then
+    echo "ERROR: ffprobe was not found."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Create CSV only if it does not already exist
+# ---------------------------------------------------------------------------
+
+if [[ ! -f "$OUTPUT_CSV" ]]; then
+    echo "video_id,filename,creation_time,duration_s,fps,width,height,frames,frame_count_source,file_size_bytes" \
+        > "$OUTPUT_CSV"
+
+    echo "Created new metadata file:"
+    echo "$OUTPUT_CSV"
+else
+    echo "Existing metadata file found."
+    echo "Already processed videos will be skipped."
+fi
+
+echo
+echo "Scanning videos in:"
+echo "$VIDEO_DIR"
+echo
+
+processed_count=0
+skipped_count=0
+failed_count=0
+
+# ---------------------------------------------------------------------------
+# Process all video files
+# ---------------------------------------------------------------------------
+
+while IFS= read -r -d '' video; do
 
     filename=$(basename "$video")
     video_id="${filename%.*}"
 
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Resume check
+    #
+    # Check whether this exact video_id already occurs in the first CSV column.
+    # -----------------------------------------------------------------------
+
+    if awk -F',' -v id="\"$video_id\"" '
+        NR > 1 && $1 == id {
+            found=1
+            exit
+        }
+        END {
+            exit !found
+        }
+    ' "$OUTPUT_CSV"; then
+
+        echo "SKIP:      $filename (already processed)"
+        ((skipped_count+=1))
+        continue
+    fi
+
+    echo "PROCESSING: $filename"
+
+    # -----------------------------------------------------------------------
     # Container / file metadata
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
 
     creation_time=$(ffprobe \
         -v error \
@@ -25,7 +86,7 @@ find "$VIDEO_DIR" -maxdepth 1 -type f \( \
         -of default=noprint_wrappers=1:nokey=1 \
         "$video" 2>/dev/null | head -n 1)
 
-    # Fallback: creation_time may be stored on the video stream
+    # Fallback: creation_time may be stored in the video stream
     if [[ -z "${creation_time:-}" ]]; then
         creation_time=$(ffprobe \
             -v error \
@@ -47,9 +108,9 @@ find "$VIDEO_DIR" -maxdepth 1 -type f \( \
         -of default=noprint_wrappers=1:nokey=1 \
         "$video" 2>/dev/null | head -n 1)
 
-    # ------------------------------------------------------------
-    # First video stream
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Video stream metadata
+    # -----------------------------------------------------------------------
 
     stream_data=$(ffprobe \
         -v error \
@@ -60,11 +121,13 @@ find "$VIDEO_DIR" -maxdepth 1 -type f \( \
 
     IFS=',' read -r width height fps_fraction frames <<< "$stream_data"
 
-    # ------------------------------------------------------------
-    # Convert FPS fraction, e.g. 200/1 -> 200.000000
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # FPS conversion
+    # Example: 200/1 -> 200.000000
+    # -----------------------------------------------------------------------
 
     if [[ -n "${fps_fraction:-}" && "$fps_fraction" != "0/0" ]]; then
+
         fps=$(awk -F/ '
             NF == 2 && $2 != 0 {
                 printf "%.6f", $1 / $2
@@ -73,30 +136,53 @@ find "$VIDEO_DIR" -maxdepth 1 -type f \( \
                 printf "%.6f", $1
             }
         ' <<< "$fps_fraction")
+
     else
         fps=""
     fi
 
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
     # Determine frame count
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
 
     if [[ -n "${frames:-}" && "$frames" != "N/A" ]]; then
+
         frame_count_source="ffprobe_nb_frames"
+
     else
+
         if [[ -n "${duration:-}" && -n "${fps:-}" ]]; then
-            frames=$(awk -v d="$duration" -v f="$fps" \
+
+            frames=$(awk \
+                -v d="$duration" \
+                -v f="$fps" \
                 'BEGIN {printf "%.0f", d*f}')
+
             frame_count_source="estimated_duration_x_fps"
+
         else
+
             frames=""
             frame_count_source="NA"
+
         fi
     fi
 
-    # ------------------------------------------------------------
-    # Replace missing values by NA
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Check whether essential metadata could be extracted
+    # -----------------------------------------------------------------------
+
+    if [[ -z "${width:-}" || -z "${height:-}" ]]; then
+
+        echo "FAILED:     $filename (video stream metadata unavailable)"
+        ((failed_count+=1))
+        continue
+
+    fi
+
+    # -----------------------------------------------------------------------
+    # Replace missing optional values by NA
+    # -----------------------------------------------------------------------
 
     creation_time="${creation_time:-NA}"
     duration="${duration:-NA}"
@@ -106,9 +192,13 @@ find "$VIDEO_DIR" -maxdepth 1 -type f \( \
     frames="${frames:-NA}"
     file_size="${file_size:-NA}"
 
-    # ------------------------------------------------------------
-    # Write CSV row
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Append completed video to CSV
+    #
+    # IMPORTANT:
+    # The row is written only AFTER processing has completed.
+    # Therefore an interrupted video is not incorrectly marked as finished.
+    # -----------------------------------------------------------------------
 
     printf '"%s","%s","%s",%s,%s,%s,%s,%s,"%s",%s\n' \
         "$video_id" \
@@ -123,9 +213,30 @@ find "$VIDEO_DIR" -maxdepth 1 -type f \( \
         "$file_size" \
         >> "$OUTPUT_CSV"
 
-    echo "Processed: $filename"
+    echo "DONE:       $filename"
 
-done
+    ((processed_count+=1))
+
+done < <(
+    find "$VIDEO_DIR" \
+        -maxdepth 1 \
+        -type f \
+        \( -iname "*.mp4" -o -iname "*.mov" \) \
+        -print0 |
+    sort -z
+)
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
 
 echo
-echo "Metadata written to: $OUTPUT_CSV"
+echo "============================================================"
+echo "Metadata extraction completed"
+echo "============================================================"
+echo "Newly processed : $processed_count"
+echo "Already existing: $skipped_count"
+echo "Failed          : $failed_count"
+echo
+echo "Metadata file:"
+echo "$OUTPUT_CSV"
