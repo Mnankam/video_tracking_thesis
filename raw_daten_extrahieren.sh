@@ -2,8 +2,8 @@
 
 set -u
 
-VIDEO_DIR="/mnt/ceoh-hdd/projects/mthesis_s_kouomnankam/data/video_sides/video_side"
-OUTPUT_CSV="/mnt/ceoh-hdd/projects/mthesis_s_kouomnankam/data/video_sides/video_metadata.csv"
+VIDEO_DIR="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/data/video_sides/video_side"
+OUTPUT_CSV="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/data/video_sides/video_metadata.csv"
 
 echo "video_id,filename,creation_time,duration_s,fps,width,height,frames,frame_count_source,file_size_bytes" > "$OUTPUT_CSV"
 
