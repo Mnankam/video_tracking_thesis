@@ -21,9 +21,9 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Va
 
 BASE_CONFIG="${PROJECT}/configs/config.yaml"
 
-EXPERIMENT_NAME="Lucas_Kanade_CPU_1"
+EXPERIMENT_NAME="Lresults_internal_validierung"
 
-OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
+OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/${EXPERIMENT_NAME}"
 
 # =========================================================
 # Steuerung der Verarbeitungsschritte
