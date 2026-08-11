@@ -1,0 +1,177 @@
+src/animate_optical_flow_cv_cuda.py:106:    video_path = config["video_path"]
+src/animate_optical_flow_cv_cuda.py:124:    cap = cv2.VideoCapture(video_path)
+src/animate_optical_flow_cv_cuda.py:126:        raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
+src/animate_optical_flow_cv_farneback.py:119:    video_path = config["video_path"]
+src/animate_optical_flow_cv_farneback.py:138:    cap = cv2.VideoCapture(video_path)
+src/animate_optical_flow_cv_farneback.py:141:        raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
+src/animate_optical_flow_detectron2.py:73:    video_path = config["video_path"]
+src/animate_optical_flow_detectron2.py:86:    cap = cv2.VideoCapture(video_path)
+src/animate_optical_flow_detectron2.py:89:        raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
+src/detectron2_inference.py:90:    video_path = config["video_path"]
+src/detectron2_inference.py:100:    cap = cv2.VideoCapture(video_path)
+src/find_best_validation_dataset.py:17:VIDEO_PATTERN = "*results_inner_pipe_track_timeseries.csv"
+src/find_best_validation_dataset.py:190:def video_id(path: Path) -> str:
+src/find_best_validation_dataset.py:201:    ident = video_id(path)
+src/find_best_validation_dataset.py:239:                "video_id": v.identifier,
+src/find_best_validation_dataset.py:240:                "video_path": v.path,
+src/find_best_validation_dataset.py:272:    videos = sorted(video_root.rglob(VIDEO_PATTERN))
+src/find_best_validation_dataset.py:277:        print(f"ERROR: no files matching {VIDEO_PATTERN} below {video_root}", file=sys.stderr)
+src/find_best_validation_dataset.py:309:        best = ranked.sort_values("score", ascending=False).groupby("video_id", as_index=False).first().sort_values("score", ascending=False)
+src/find_best_validation_dataset.py:311:    vf[vf.error.fillna("") != ""].to_csv(out / "failed_video_files.csv", index=False)
+src/find_best_validation_dataset.py:319:        cols = ["video_id", "imu_measurement_id", "video_dominant_frequency_hz", "imu_dominant_frequency_hz", "frequency_error_hz", "score"]
+src/optical_flow_cuda.py:69:    video_path = config["video_path"]
+src/optical_flow_cuda.py:88:    cap = cv2.VideoCapture(video_path)
+src/optical_flow_cuda.py:90:        raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
+src/optical_flow_cuda.py:186:    print(f"Video: {video_path}")
+src/optical_flow_farneback.py:101:    video_path = config["video_path"]
+src/optical_flow_farneback.py:122:    cap = cv2.VideoCapture(video_path)
+src/optical_flow_farneback.py:126:            f"Video konnte nicht geöffnet werden: {video_path}"
+src/optical_flow_farneback.py:226:                "video_path": video_path,
+src/optical_flow_farneback.py:244:    print(f"Video: {video_path}")
+src/optical_flow_test.py:105:    video_path = config["video_path"]
+src/optical_flow_test.py:125:    cap = cv2.VideoCapture(video_path)
+src/optical_flow_test.py:127:        raise RuntimeError(f"Video konnte nicht geöffnet werden: {video_path}")
+src/optical_flow_test.py:281:                "video_path": video_path,
+src/optical_flow_test.py:300:    print(f"Video: {video_path}")
+src/pipeline.py:35:    video_path: str
+src/pipeline.py:514:        cap = cv2.VideoCapture(self.config.video_path)
+src/pipeline.py:516:            raise RuntimeError(f"Video konnte nicht geöffnet werden: {self.config.video_path}")
+src/pipeline.py:835:                "video_path": self.config.video_path,
+src/pipeline.py:872:        video_path=data["video_path"],
+src/search_matching_imu_measurement_v3.py:385:        "REFERENCE VIDEO", "-" * 80,
+src/search_matching_imu_measurement_v3_1.py:385:        "REFERENCE VIDEO", "-" * 80,
+src/validate_top_candidates.py:28:        cfg=ValidationConfig(video_path=Path(a.video_csv),imu_path=imu,output_dir=run,
+src/validate_top_candidates_professional.py:12:  columns ``video_id``, ``imu_path`` and ``rank_for_video``.
+src/validate_top_candidates_professional.py:37:    video_id,video_path,imu_measurement_id,imu_path,...,score,rank_for_video
+src/validate_top_candidates_professional.py:97:    "video_id",
+src/validate_top_candidates_professional.py:98:    "video_path",
+src/validate_top_candidates_professional.py:111:    "video_id",
+src/validate_top_candidates_professional.py:112:    "video_path",
+src/validate_top_candidates_professional.py:142:    "video_id",
+src/validate_top_candidates_professional.py:143:    "video_path",
+src/validate_top_candidates_professional.py:172:    video_id: str
+src/validate_top_candidates_professional.py:173:    video_path: Optional[Path]
+src/validate_top_candidates_professional.py:184:                self.video_id,
+src/validate_top_candidates_professional.py:185:                str(self.video_path or ""),
+src/validate_top_candidates_professional.py:203:            "video_id": self.video_id,
+src/validate_top_candidates_professional.py:204:            "video_path": str(self.video_path) if self.video_path else None,
+src/validate_top_candidates_professional.py:217:    video_id: Optional[str] = None
+src/validate_top_candidates_professional.py:314:            "video_id": self.candidate.video_id,
+src/validate_top_candidates_professional.py:315:            "video_path": str(self.candidate.video_path or ""),
+src/validate_top_candidates_professional.py:376:            "video_id": self.candidate.video_id,
+src/validate_top_candidates_professional.py:377:            "video_path": str(self.candidate.video_path or ""),
+src/validate_top_candidates_professional.py:490:def infer_video_id(path: Optional[Path]) -> str:
+src/validate_top_candidates_professional.py:640:    required_config_fields = {"video_path", "imu_path", "output_dir"}
+src/validate_top_candidates_professional.py:704:    default_video_path: Optional[Path],
+src/validate_top_candidates_professional.py:711:    video_text = first_non_empty(row.get("video_path"))
+src/validate_top_candidates_professional.py:712:    video_path = canonical_path(video_text, csv_directory) if video_text else default_video_path
+src/validate_top_candidates_professional.py:713:    video_id = first_non_empty(row.get("video_id"), infer_video_id(video_path)) or "unknown_video"
+src/validate_top_candidates_professional.py:727:        video_id=video_id,
+src/validate_top_candidates_professional.py:728:        video_path=video_path,
+src/validate_top_candidates_professional.py:758:def select_video_id(candidates: Sequence[Candidate], requested: Optional[str]) -> str:
+src/validate_top_candidates_professional.py:760:    identifiers = sorted({candidate.video_id for candidate in candidates})
+src/validate_top_candidates_professional.py:770:            f"video_id '{requested}' did not resolve uniquely. Available: {identifiers}"
+src/validate_top_candidates_professional.py:775:        "Candidate CSV contains multiple video_id values. Use --video-id. "
+src/validate_top_candidates_professional.py:779:    selected_video_id = select_video_id(candidates, config.video_id)
+src/validate_top_candidates_professional.py:780:    target = normalize_identifier(selected_video_id)
+src/validate_top_candidates_professional.py:784:        if normalize_identifier(candidate.video_id) == target
+src/validate_top_candidates_professional.py:799:        raise ConfigurationError("No candidates selected after video_id/top-k filtering.")
+src/validate_top_candidates_professional.py:806:        effective_video = config.video_csv or candidate.video_path
+src/validate_top_candidates_professional.py:809:                f"Candidate {candidate.label} has no video_path and --video-csv was not set."
+src/validate_top_candidates_professional.py:907:    video_path = config.video_csv or candidate.video_path
+src/validate_top_candidates_professional.py:908:    if video_path is None:
+src/validate_top_candidates_professional.py:911:        "video_path": video_path,
+src/validate_top_candidates_professional.py:941:        "run_name": f"{candidate.video_id} candidate {candidate.rank_for_video}: {candidate.label}",
+src/validate_top_candidates_professional.py:1137:<p><strong>Video ID:</strong> {html.escape(summary.selected_candidates[0].video_id if summary.selected_candidates else '')}<br>
+src/validate_top_candidates_professional.py:1328:        "--video-csv", "--video-path", dest="video_csv", type=Path,
+src/validate_top_candidates_professional.py:1329:        help="Override video_path from the candidate CSV for every selected row.",
+src/validate_top_candidates_professional.py:1332:        "--video-id",
+src/validate_top_candidates_professional.py:1333:        help="Filter candidates by repository video_id; required for multi-video CSV files.",
+src/validate_top_candidates_professional.py:1410:        video_id=args.video_id,
+src/validate_video_signals_automatic.py:14:      --video-id GX010049 \
+src/validate_video_signals_automatic.py:98:    parser.add_argument("--video-id", required=True)
+src/validate_video_signals_automatic.py:404:        "--video-id",
+src/validate_video_signals_automatic.py:405:        str(args.video_id),
+src/validate_video_signals_automatic.py:587:        "video_id": args.video_id,
+src/validate_video_signals_automatic.py:621:        f"# Automatische Videosignal-Validierung – {args.video_id}",
+src/validate_video_signals_automatic.py:685:    print("AUTOMATISCHE VIDEOSIGNAL-VALIDIERUNG")
+src/validate_video_vs_imu.py:192:    video_path = Path(args.video_csv)
+src/validate_video_vs_imu.py:196:    if not video_path.is_file():
+src/validate_video_vs_imu.py:197:        raise FileNotFoundError(f"Video-CSV fehlt: {video_path}")
+src/validate_video_vs_imu.py:204:        video_path,
+src/validate_video_vs_imu.py:403:        "video_csv": str(video_path),
+src/validate_video_vs_imu_physical.py:1200:    parser.add_argument("--video-csv", "--video-path", dest="video_path", type=Path)
+src/validate_video_vs_imu_physical.py:1296:            if args.video_path is None or args.imu_path is None:
+src/validate_video_vs_imu_physical.py:1302:                video_path=args.video_path,
+src/validate_video_vs_imu_v2.py:176:    video_path: Path
+src/validate_video_vs_imu_v2.py:226:        self.video_path = Path(self.video_path).expanduser()
+src/validate_video_vs_imu_v2.py:611:                path=config.video_path,
+src/validate_video_vs_imu_v2.py:612:                video_path=config.video_path,
+src/validate_video_vs_imu_v2.py:613:                csv_path=config.video_path,
+src/validate_video_vs_imu_v2.py:614:                file_path=config.video_path,
+src/validate_video_vs_imu_v2.py:625:                source=config.video_path,
+src/validate_video_vs_imu_v2.py:642:    frame = _read_delimited_file(config.video_path)
+src/validate_video_vs_imu_v2.py:647:        source=config.video_path,
+src/validate_video_vs_imu_v2.py:1452:    if not config.video_path.is_file():
+src/validate_video_vs_imu_v2.py:1453:        raise FileNotFoundError(f"Video-Tracking-Datei fehlt: {config.video_path}")
+src/validate_video_vs_imu_v2.py:1628:    parser.add_argument("--video-csv", "--video-path", dest="video_path", type=Path)
+src/validate_video_vs_imu_v2.py:1690:        "video_path",
+src/validate_video_vs_imu_v2.py:1739:        "video_csv": "video_path",
+src/validate_video_vs_imu_v2.py:1750:    required = ("video_path", "imu_path", "output_dir")
+src/validate_video_vs_imu_v3.py:92:    video_path: Path
+src/validate_video_vs_imu_v3.py:122:        self.video_path = Path(self.video_path).expanduser()
+src/validate_video_vs_imu_v3.py:312:        video_path=batch.video_path,
+src/validate_video_vs_imu_v3.py:339:        run_name=f"{batch.video_path.stem}_{axis}",
+src/validate_video_vs_imu_v3.py:504:    if not batch.video_path.is_file():
+src/validate_video_vs_imu_v3.py:505:        raise FileNotFoundError(batch.video_path)
+src/validate_video_vs_imu_v3.py:544:        "video_path": str(batch.video_path),
+src/validate_video_vs_imu_v3.py:572:    parser.add_argument("--video-csv", "--video-path", dest="video_path", type=Path, required=True)
+src/validate_video_vs_imu_v3.py:610:            video_path=args.video_path,
+src/visualization.py:180:# VIDEO OVERLAY
+src/visualization.py:267:    video_path: str,
+src/visualization.py:269:    output_video_path: str,
+src/visualization.py:276:    cap = cv2.VideoCapture(video_path)
+src/visualization.py:303:        output_video_path,
+src/visualization.py:388:    video_out = os.path.join(output_dir, "overlay_video.mp4")
+src/visualization.py:389:    if render_overlay_video(config["video_path"], df, video_out, config):
+extract_iou_frames_gx010044.py:4:video_path = "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4"
+extract_iou_frames_gx010044.py:9:cap = cv2.VideoCapture(video_path)
+organize_videos.sh:10:for file in $SRC/*.MP4; do
+raw_daten_extrahieren.sh:5:VIDEO_DIR="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_sides/video_side"
+raw_daten_extrahieren.sh:12:if [[ ! -d "$VIDEO_DIR" ]]; then
+raw_daten_extrahieren.sh:14:    echo "       $VIDEO_DIR"
+raw_daten_extrahieren.sh:28:    echo "video_id,filename,creation_time,duration_s,fps,width,height,frames,frame_count_source,file_size_bytes" \
+raw_daten_extrahieren.sh:40:echo "$VIDEO_DIR"
+raw_daten_extrahieren.sh:54:    video_id="${filename%.*}"
+raw_daten_extrahieren.sh:59:    # Check whether this exact video_id already occurs in the first CSV column.
+raw_daten_extrahieren.sh:62:    if awk -F',' -v id="\"$video_id\"" '
+raw_daten_extrahieren.sh:204:        "$video_id" \
+raw_daten_extrahieren.sh:221:    find "$VIDEO_DIR" \
+raw_daten_extrahieren.sh:224:        \( -iname "*.mp4" -o -iname "*.mov" \) \
+run_batch.sh:30:for video in "$DATA"/*.MP4; do
+run_batch.sh:37:    name=$(basename "$video" .MP4)
+run_batch.sh:47:    VISUALIZATION_OUT="$OUT/${name}_visualization.mp4"
+run_batch.sh:59:    sed "s|^video_path:.*|video_path: $video|; \
+run_batch_Lucas_kanade.sh:20:for video in "$DATA"/*.MP4; do
+run_batch_Lucas_kanade.sh:23:    name=$(basename "$video" .MP4)
+run_batch_Lucas_kanade.sh:41:    sed "s|^video_path:.*|video_path: $video|; \
+run_batch_cuda.sh:14:for video in "$DATA"/*.MP4; do
+run_batch_cuda.sh:17:    name=$(basename "$video" .MP4)
+run_batch_cuda.sh:36:    sed "s|^video_path:.*|video_path: $video|; \
+run_batch_detectron2.sh:15:for video in "$DATA"/*.MP4; do
+run_batch_detectron2.sh:18:    name=$(basename "$video" .MP4)
+run_batch_detectron2.sh:36:    sed "s|^video_path:.*|video_path: $video|; \
+run_batch_lucas_kanade_1.sh:40:ONLY_VIDEO=""
+run_batch_lucas_kanade_1.sh:127:        -e "s|^video_path:.*|video_path: ${video}|" \
+run_batch_lucas_kanade_1.sh:141:        -e "s|^video_path:.*|video_path: ${video}|" \
+run_batch_lucas_kanade_1.sh:175:actual_video = pathlib.Path(str(config.get("video_path", "")))
+run_batch_lucas_kanade_1.sh:179:        "Falscher video_path in Config:\n"
+run_batch_lucas_kanade_1.sh:238:declare -a VIDEOS=()
+run_batch_lucas_kanade_1.sh:240:if [[ -n "${ONLY_VIDEO}" ]]; then
+run_batch_lucas_kanade_1.sh:242:    target_video="${DATA}/${ONLY_VIDEO}.MP4"
+run_batch_lucas_kanade_1.sh:246:    VIDEOS+=("${target_video}")
+run_batch_lucas_kanade_1.sh:252:    for video in "${DATA}"/*.MP4 "${DATA}"/*.mp4; do
+run_batch_lucas_kanade_1.sh:253:        VIDEOS+=("${video}")
+run_batch_lucas_kanade_1.sh:258:    if [[ ${#VIDEOS[@]} -eq 0 ]]; then
+run_batch_lucas_kanade_1.sh:264:log "Anzahl Videos: ${#VIDEOS[@]}"
+run_batch_lucas_kanade_1.sh:270:for video in "${VIDEOS[@]}"; do

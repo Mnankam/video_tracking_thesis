@@ -1,0 +1,698 @@
+./result_files.txt:3:./outputs/candidate_validation/GX010049/repository_compatibility.json
+./result_files.txt:4:./outputs/candidate_validation/GX010049/stage3.log
+./result_files.txt:8:./results/external_validation/GX010044/linx/data/aligned_signals.csv
+./result_files.txt:9:./results/external_validation/GX010044/linx/data/imu_preprocessed.csv
+./result_files.txt:10:./results/external_validation/GX010044/linx/data/imu_raw.csv
+./result_files.txt:11:./results/external_validation/GX010044/linx/data/video_preprocessed.csv
+./result_files.txt:12:./results/external_validation/GX010044/linx/data/video_raw.csv
+./result_files.txt:13:./results/external_validation/GX010044/linx/validation_config.json
+./result_files.txt:14:./results/external_validation/GX010044/linx/validation_result.json
+./result_files.txt:15:./results/external_validation/GX010044/liny/data/aligned_signals.csv
+./result_files.txt:16:./results/external_validation/GX010044/liny/data/imu_preprocessed.csv
+./result_files.txt:17:./results/external_validation/GX010044/liny/data/imu_raw.csv
+./result_files.txt:18:./results/external_validation/GX010044/liny/data/video_preprocessed.csv
+./result_files.txt:19:./results/external_validation/GX010044/liny/data/video_raw.csv
+./result_files.txt:20:./results/external_validation/GX010044/liny/validation_config.json
+./result_files.txt:21:./results/external_validation/GX010044/liny/validation_result.json
+./result_files.txt:22:./results/external_validation/GX010044/linz/data/aligned_signals.csv
+./result_files.txt:23:./results/external_validation/GX010044/linz/data/imu_preprocessed.csv
+./result_files.txt:24:./results/external_validation/GX010044/linz/data/imu_raw.csv
+./result_files.txt:25:./results/external_validation/GX010044/linz/data/video_preprocessed.csv
+./result_files.txt:26:./results/external_validation/GX010044/linz/data/video_raw.csv
+./result_files.txt:27:./results/external_validation/GX010044/linz/validation_config.json
+./result_files.txt:28:./results/external_validation/GX010044/linz/validation_result.json
+./result_files.txt:29:./results/external_validation/GX010044/rotx/data/aligned_signals.csv
+./result_files.txt:30:./results/external_validation/GX010044/rotx/data/imu_preprocessed.csv
+./result_files.txt:31:./results/external_validation/GX010044/rotx/data/imu_raw.csv
+./result_files.txt:32:./results/external_validation/GX010044/rotx/data/video_preprocessed.csv
+./result_files.txt:33:./results/external_validation/GX010044/rotx/data/video_raw.csv
+./result_files.txt:34:./results/external_validation/GX010044/rotx/validation_config.json
+./result_files.txt:35:./results/external_validation/GX010044/rotx/validation_result.json
+./result_files.txt:36:./results/external_validation/GX010044/roty/data/aligned_signals.csv
+./result_files.txt:37:./results/external_validation/GX010044/roty/data/imu_preprocessed.csv
+./result_files.txt:38:./results/external_validation/GX010044/roty/data/imu_raw.csv
+./result_files.txt:39:./results/external_validation/GX010044/roty/data/video_preprocessed.csv
+./result_files.txt:40:./results/external_validation/GX010044/roty/data/video_raw.csv
+./result_files.txt:41:./results/external_validation/GX010044/roty/validation_config.json
+./result_files.txt:42:./results/external_validation/GX010044/roty/validation_result.json
+./result_files.txt:43:./results/external_validation/GX010044/rotz/data/aligned_signals.csv
+./result_files.txt:44:./results/external_validation/GX010044/rotz/data/imu_preprocessed.csv
+./result_files.txt:45:./results/external_validation/GX010044/rotz/data/imu_raw.csv
+./result_files.txt:46:./results/external_validation/GX010044/rotz/data/video_preprocessed.csv
+./result_files.txt:47:./results/external_validation/GX010044/rotz/data/video_raw.csv
+./result_files.txt:48:./results/external_validation/GX010044/rotz/validation_config.json
+./result_files.txt:49:./results/external_validation/GX010044/rotz/validation_result.json
+./results/external_validation/GX010044/linx/data/aligned_signals.csv:1:time_s,GX010044 inner pipe center x,2022-02-25_16.30.06 linx,residual
+./results/external_validation/GX010044/linx/data/video_preprocessed.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/linx/data/video_raw.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/linx/validation_config.json:2:  "video_path": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/linx/validation_config.json:4:  "output_dir": "results/external_validation/GX010044/linx",
+./results/external_validation/GX010044/linx/validation_config.json:27:  "video_name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/linx/validation_config.json:32:  "run_name": "GX010044_linx",
+./results/external_validation/GX010044/linx/validation_result.json:2:  "output_dir": "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linx",
+./results/external_validation/GX010044/linx/validation_result.json:36:    "name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/linx/validation_result.json:38:    "source": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/linx/validation_result.json:72:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linx/figures/aligned_signals.png",
+./results/external_validation/GX010044/linx/validation_result.json:73:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linx/figures/video_vs_imu_scatter.png",
+./results/external_validation/GX010044/linx/validation_result.json:74:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linx/figures/residuals.png"
+./results/external_validation/GX010044/liny/data/aligned_signals.csv:1:time_s,GX010044 inner pipe center x,2022-02-25_16.30.06 liny,residual
+./results/external_validation/GX010044/liny/data/video_preprocessed.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/liny/data/video_raw.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/liny/validation_config.json:2:  "video_path": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/liny/validation_config.json:4:  "output_dir": "results/external_validation/GX010044/liny",
+./results/external_validation/GX010044/liny/validation_config.json:27:  "video_name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/liny/validation_config.json:32:  "run_name": "GX010044_liny",
+./results/external_validation/GX010044/liny/validation_result.json:2:  "output_dir": "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/liny",
+./results/external_validation/GX010044/liny/validation_result.json:36:    "name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/liny/validation_result.json:38:    "source": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/liny/validation_result.json:72:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/liny/figures/aligned_signals.png",
+./results/external_validation/GX010044/liny/validation_result.json:73:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/liny/figures/video_vs_imu_scatter.png",
+./results/external_validation/GX010044/liny/validation_result.json:74:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/liny/figures/residuals.png"
+./results/external_validation/GX010044/linz/data/aligned_signals.csv:1:time_s,GX010044 inner pipe center x,2022-02-25_16.30.06 linz,residual
+./results/external_validation/GX010044/linz/data/video_preprocessed.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/linz/data/video_raw.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/linz/validation_config.json:2:  "video_path": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/linz/validation_config.json:4:  "output_dir": "results/external_validation/GX010044/linz",
+./results/external_validation/GX010044/linz/validation_config.json:27:  "video_name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/linz/validation_config.json:32:  "run_name": "GX010044_linz",
+./results/external_validation/GX010044/linz/validation_result.json:2:  "output_dir": "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linz",
+./results/external_validation/GX010044/linz/validation_result.json:36:    "name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/linz/validation_result.json:38:    "source": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/linz/validation_result.json:72:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linz/figures/aligned_signals.png",
+./results/external_validation/GX010044/linz/validation_result.json:73:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linz/figures/video_vs_imu_scatter.png",
+./results/external_validation/GX010044/linz/validation_result.json:74:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/linz/figures/residuals.png"
+./results/external_validation/GX010044/rotx/data/aligned_signals.csv:1:time_s,GX010044 inner pipe center x,2022-02-25_16.30.06 rotx,residual
+./results/external_validation/GX010044/rotx/data/video_preprocessed.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/rotx/data/video_raw.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/rotx/validation_config.json:2:  "video_path": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/rotx/validation_config.json:4:  "output_dir": "results/external_validation/GX010044/rotx",
+./results/external_validation/GX010044/rotx/validation_config.json:27:  "video_name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/rotx/validation_config.json:32:  "run_name": "GX010044_rotx",
+./results/external_validation/GX010044/rotx/validation_result.json:2:  "output_dir": "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotx",
+./results/external_validation/GX010044/rotx/validation_result.json:36:    "name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/rotx/validation_result.json:38:    "source": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/rotx/validation_result.json:72:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotx/figures/aligned_signals.png",
+./results/external_validation/GX010044/rotx/validation_result.json:73:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotx/figures/video_vs_imu_scatter.png",
+./results/external_validation/GX010044/rotx/validation_result.json:74:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotx/figures/residuals.png"
+./results/external_validation/GX010044/roty/data/aligned_signals.csv:1:time_s,GX010044 inner pipe center x,2022-02-25_16.30.06 roty,residual
+./results/external_validation/GX010044/roty/data/video_preprocessed.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/roty/data/video_raw.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/roty/validation_config.json:2:  "video_path": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/roty/validation_config.json:4:  "output_dir": "results/external_validation/GX010044/roty",
+./results/external_validation/GX010044/roty/validation_config.json:27:  "video_name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/roty/validation_config.json:32:  "run_name": "GX010044_roty",
+./results/external_validation/GX010044/roty/validation_result.json:2:  "output_dir": "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/roty",
+./results/external_validation/GX010044/roty/validation_result.json:36:    "name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/roty/validation_result.json:38:    "source": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/roty/validation_result.json:72:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/roty/figures/aligned_signals.png",
+./results/external_validation/GX010044/roty/validation_result.json:73:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/roty/figures/video_vs_imu_scatter.png",
+./results/external_validation/GX010044/roty/validation_result.json:74:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/roty/figures/residuals.png"
+./results/external_validation/GX010044/rotz/data/aligned_signals.csv:1:time_s,GX010044 inner pipe center x,2022-02-25_16.30.06 rotz,residual
+./results/external_validation/GX010044/rotz/data/video_preprocessed.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/rotz/data/video_raw.csv:1:time_s,GX010044 inner pipe center x
+./results/external_validation/GX010044/rotz/validation_config.json:2:  "video_path": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/rotz/validation_config.json:4:  "output_dir": "results/external_validation/GX010044/rotz",
+./results/external_validation/GX010044/rotz/validation_config.json:27:  "video_name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/rotz/validation_config.json:32:  "run_name": "GX010044_rotz",
+./results/external_validation/GX010044/rotz/validation_result.json:2:  "output_dir": "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotz",
+./results/external_validation/GX010044/rotz/validation_result.json:36:    "name": "GX010044 inner pipe center x",
+./results/external_validation/GX010044/rotz/validation_result.json:38:    "source": "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Lucas_Kanade_CPU7/GX010044_results_inner_pipe_track_timeseries.csv",
+./results/external_validation/GX010044/rotz/validation_result.json:72:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotz/figures/aligned_signals.png",
+./results/external_validation/GX010044/rotz/validation_result.json:73:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotz/figures/video_vs_imu_scatter.png",
+./results/external_validation/GX010044/rotz/validation_result.json:74:    "/mnt/vast-standard/home/s.kouomnankam/u26502/projects/video_tracking_thesis/results/external_validation/GX010044/rotz/figures/residuals.png"
+./video_input_usage.txt:91:src/validate_video_signals_automatic.py:14:      --video-id GX010049 \
+./video_input_usage.txt:137:extract_iou_frames_gx010044.py:4:video_path = "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4"
+./video_metadata.csv:2:"GX010043","GX010043.MP4","2022-02-25T16:23:55.000000Z",383.900000,200.000000,1920,1080,76766,"ffprobe_nb_frames",2894756038
+./video_metadata.csv:3:"GX010044","GX010044.MP4","2022-02-25T16:34:23.000000Z",74.410000,200.000000,1920,1080,14874,"ffprobe_nb_frames",560628658
+./video_metadata.csv:4:"GX010045","GX010045.MP4","2022-02-25T16:40:11.000000Z",75.700000,200.000000,1920,1080,15134,"ffprobe_nb_frames",570823797
+./video_metadata.csv:5:"GX010046","GX010046.MP4","2022-02-25T16:45:34.000000Z",76.160000,200.000000,1920,1080,15228,"ffprobe_nb_frames",574524445
+./video_metadata.csv:6:"GX010047","GX010047.MP4","2022-02-25T16:52:27.000000Z",69.890000,200.000000,1920,1080,13974,"ffprobe_nb_frames",527339267
+./video_metadata.csv:7:"GX010048","GX010048.MP4","2022-02-25T16:58:19.000000Z",75.635000,200.000000,1920,1080,15122,"ffprobe_nb_frames",570621849
+./video_metadata.csv:8:"GX010049","GX010049.MP4","2022-02-25T17:03:50.000000Z",75.520000,200.000000,1920,1080,15100,"ffprobe_nb_frames",569195497
+./video_metadata.csv:9:"GX010050","GX010050.MP4","2022-02-25T17:08:51.000000Z",74.840000,200.000000,1920,1080,14964,"ffprobe_nb_frames",564649514
+./video_metadata.csv:10:"GX010051","GX010051.MP4","2022-02-25T17:14:27.000000Z",74.325333,200.000000,1920,1080,14861,"ffprobe_nb_frames",560576146
+./video_metadata.csv:11:"GX010052","GX010052.MP4","2022-02-25T17:20:13.000000Z",74.945000,200.000000,1920,1080,14985,"ffprobe_nb_frames",565432212
+./video_metadata.csv:12:"GX010053","GX010053.MP4","2022-02-25T17:25:29.000000Z",71.515000,200.000000,1920,1080,14298,"ffprobe_nb_frames",539140569
+./video_metadata.csv:13:"GX010054","GX010054.MP4","2022-02-25T18:18:24.000000Z",79.957333,200.000000,1920,1080,15988,"ffprobe_nb_frames",602838351
+./video_metadata.csv:14:"GX010055","GX010055.MP4","2022-03-01T14:57:46.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004197411
+./video_metadata.csv:15:"GX010081","GX010081.MP4","2022-03-06T18:54:31.000000Z",441.340000,200.000000,1920,1080,88252,"ffprobe_nb_frames",3327814827
+./video_metadata.csv:16:"GX010090","GX010090.MP4","2022-03-14T20:44:28.000000Z",69.960000,200.000000,1920,1080,13978,"ffprobe_nb_frames",527064206
+./video_metadata.csv:17:"GX010091","GX010091.MP4","2022-03-14T20:51:31.000000Z",80.805000,200.000000,1920,1080,16146,"ffprobe_nb_frames",608900150
+./video_metadata.csv:18:"GX010092","GX010092.MP4","2022-03-14T20:58:10.000000Z",74.855000,200.000000,1920,1080,14964,"ffprobe_nb_frames",564572119
+./video_metadata.csv:19:"GX010093","GX010093.MP4","2022-03-14T21:04:52.000000Z",75.175000,200.000000,1920,1080,15019,"ffprobe_nb_frames",566245655
+./video_metadata.csv:20:"GX010094","GX010094.MP4","2022-03-14T21:11:32.000000Z",75.430000,200.000000,1920,1080,15070,"ffprobe_nb_frames",568123314
+./video_metadata.csv:21:"GX010095","GX010095.MP4","2022-03-14T21:26:08.000000Z",74.520000,200.000000,1920,1080,14891,"ffprobe_nb_frames",561634592
+./video_metadata.csv:22:"GX010096","GX010096.MP4","2022-03-14T21:34:29.000000Z",490.620000,200.000000,1920,1080,98108,"ffprobe_nb_frames",3699250227
+./video_metadata.csv:23:"GX010097","GX010097.MP4","2022-03-14T21:55:36.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004230733
+./video_metadata.csv:24:"GX010098","GX010098.MP4","2022-03-14T22:16:55.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004477871
+./video_metadata.csv:25:"GX010099","GX010099.MP4","2022-03-15T20:16:32.000000Z",74.780000,200.000000,1920,1080,14942,"ffprobe_nb_frames",563777426
+./video_metadata.csv:26:"GX010100","GX010100.MP4","2022-03-15T20:23:02.000000Z",74.465000,200.000000,1920,1080,14887,"ffprobe_nb_frames",561877181
+./video_metadata.csv:27:"GX010101","GX010101.MP4","2022-03-15T20:43:32.000000Z",75.190000,200.000000,1920,1080,15023,"ffprobe_nb_frames",566963743
+./video_metadata.csv:28:"GX010102","GX010102.MP4","2022-03-15T20:54:51.000000Z",75.215000,200.000000,1920,1080,15028,"ffprobe_nb_frames",567009893
+./video_metadata.csv:29:"GX010103","GX010103.MP4","2022-03-15T21:09:20.000000Z",74.065000,200.000000,1920,1080,14806,"ffprobe_nb_frames",558449289
+./video_metadata.csv:30:"GX010104","GX010104.MP4","2022-03-15T21:20:02.000000Z",74.800000,200.000000,1920,1080,14947,"ffprobe_nb_frames",563760162
+./video_metadata.csv:31:"GX010105","GX010105.MP4","2022-03-15T21:31:33.000000Z",75.525000,200.000000,1920,1080,15092,"ffprobe_nb_frames",569393359
+./video_metadata.csv:32:"GX010106","GX010106.MP4","2022-03-15T21:47:26.000000Z",524.870000,200.000000,1920,1080,104961,"ffprobe_nb_frames",3957618725
+./video_metadata.csv:33:"GX010107","GX010107.MP4","2022-03-15T22:02:36.000000Z",76.025000,200.000000,1920,1080,15198,"ffprobe_nb_frames",573179541
+./video_metadata.csv:34:"GX010108","GX010108.MP4","2022-03-15T22:14:34.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004293883
+./video_metadata.csv:35:"GX010109","GX010109.MP4","2022-03-15T22:37:01.000000Z",75.260000,200.000000,1920,1080,15036,"ffprobe_nb_frames",566956158
+./video_metadata.csv:36:"GX010110","GX010110.MP4","2022-03-15T22:48:21.000000Z",69.880000,200.000000,1920,1080,13961,"ffprobe_nb_frames",526538279
+./video_metadata.csv:37:"GX010111","GX010111.MP4","2022-03-15T22:58:34.000000Z",74.725000,200.000000,1920,1080,14930,"ffprobe_nb_frames",563056748
+./video_metadata.csv:38:"GX010112","GX010112.MP4","2022-03-15T23:08:23.000000Z",75.685000,200.000000,1920,1080,15122,"ffprobe_nb_frames",570424778
+./video_metadata.csv:39:"GX010113","GX010113.MP4","2022-03-16T22:00:18.000000Z",74.335000,200.000000,1920,1080,14853,"ffprobe_nb_frames",560302594
+./video_metadata.csv:40:"GX010114","GX010114.MP4","2022-03-16T22:15:39.000000Z",73.255000,200.000000,1920,1080,14635,"ffprobe_nb_frames",551902036
+./video_metadata.csv:41:"GX010115","GX010115.MP4","2022-03-16T22:22:13.000000Z",74.930000,200.000000,1920,1080,14972,"ffprobe_nb_frames",564752996
+./video_metadata.csv:42:"GX010116","GX010116.MP4","2022-03-16T22:37:18.000000Z",74.320000,200.000000,1920,1080,14849,"ffprobe_nb_frames",560006258
+./video_metadata.csv:43:"GX010117","GX010117.MP4","2022-03-16T22:44:42.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004492094
+./video_metadata.csv:44:"GX010118","GX010118.MP4","2022-03-16T23:03:37.000000Z",74.980000,200.000000,1920,1080,14981,"ffprobe_nb_frames",564934639
+./video_metadata.csv:45:"GX010119","GX010119.MP4","2022-03-16T23:10:14.000000Z",75.040000,200.000000,1920,1080,14994,"ffprobe_nb_frames",565428341
+./video_metadata.csv:46:"GX010122","GX010122.MP4","2022-04-04T17:24:34.000000Z",74.950000,200.000000,1920,1080,14977,"ffprobe_nb_frames",564683576
+./video_metadata.csv:47:"GX010123","GX010123.MP4","2022-04-04T17:30:52.000000Z",75.275000,200.000000,1920,1080,15049,"ffprobe_nb_frames",567625111
+./video_metadata.csv:48:"GX010124","GX010124.MP4","2022-04-04T17:35:40.000000Z",76.875000,200.000000,1920,1080,15361,"ffprobe_nb_frames",579425879
+./video_metadata.csv:49:"GX010125","GX010125.MP4","2022-04-04T17:41:33.000000Z",74.255000,200.000000,1920,1080,14836,"ffprobe_nb_frames",559787448
+./video_metadata.csv:50:"GX010126","GX010126.MP4","2022-04-04T17:47:17.000000Z",75.985000,200.000000,1920,1080,15190,"ffprobe_nb_frames",573075223
+./video_metadata.csv:51:"GX010127","GX010127.MP4","2022-04-04T17:52:14.000000Z",380.595000,200.000000,1920,1080,76105,"ffprobe_nb_frames",2869876494
+./video_metadata.csv:52:"GX010128","GX010128.MP4","2022-04-04T18:02:34.000000Z",75.515000,200.000000,1920,1080,15087,"ffprobe_nb_frames",569200659
+./video_metadata.csv:53:"GX010129","GX010129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004586872
+./video_metadata.csv:54:"GX010130","GX010130.MP4","2022-04-04T22:44:47.000000Z",401.745000,200.000000,1920,1080,80333,"ffprobe_nb_frames",3028831224
+./video_metadata.csv:55:"GX010131","GX010131.MP4","2022-04-04T22:55:10.000000Z",369.710000,200.000000,1920,1080,73929,"ffprobe_nb_frames",2787501054
+./video_metadata.csv:56:"GX010132","GX010132.MP4","2022-04-04T23:05:05.000000Z",70.390000,200.000000,1920,1080,14063,"ffprobe_nb_frames",530368774
+./video_metadata.csv:57:"GX010133","GX010133.MP4","2022-04-04T23:09:56.000000Z",74.920000,200.000000,1920,1080,14968,"ffprobe_nb_frames",564615299
+./video_metadata.csv:58:"GX010134","GX010134.MP4","2022-04-04T23:15:00.000000Z",79.960000,200.000000,1920,1080,15979,"ffprobe_nb_frames",602719332
+./video_metadata.csv:59:"GX010135","GX010135.MP4","2022-04-04T23:19:56.000000Z",76.125000,200.000000,1920,1080,15211,"ffprobe_nb_frames",573820305
+./video_metadata.csv:60:"GX010136","GX010136.MP4","2022-04-06T14:49:25.000000Z",74.930000,200.000000,1920,1080,14972,"ffprobe_nb_frames",564781170
+./video_metadata.csv:61:"GX010137","GX010137.MP4","2022-04-06T14:54:46.000000Z",74.770000,200.000000,1920,1080,14938,"ffprobe_nb_frames",563525383
+./video_metadata.csv:62:"GX010138","GX010138.MP4","2022-04-06T15:00:06.000000Z",74.960000,200.000000,1920,1080,14977,"ffprobe_nb_frames",565040107
+./video_metadata.csv:63:"GX010139","GX010139.MP4","2022-04-06T15:05:22.000000Z",75.155000,200.000000,1920,1080,15015,"ffprobe_nb_frames",566586981
+./video_metadata.csv:64:"GX010140","GX010140.MP4","2022-04-06T15:10:34.000000Z",75.465000,200.000000,1920,1080,15087,"ffprobe_nb_frames",569173299
+./video_metadata.csv:65:"GX010141","GX010141.MP4","2022-04-06T15:15:35.000000Z",74.855000,200.000000,1920,1080,14955,"ffprobe_nb_frames",564224166
+./video_metadata.csv:66:"GX010142","GX010142.MP4","2022-04-06T15:21:36.000000Z",75.090000,200.000000,1920,1080,15002,"ffprobe_nb_frames",566037160
+./video_metadata.csv:67:"GX010143","GX010143.MP4","2022-04-06T15:26:17.000000Z",75.375000,200.000000,1920,1080,15062,"ffprobe_nb_frames",568208321
+./video_metadata.csv:68:"GX010144","GX010144.MP4","2022-04-06T15:31:29.000000Z",406.195000,200.000000,1920,1080,81234,"ffprobe_nb_frames",3063219644
+./video_metadata.csv:69:"GX010145","GX010145.MP4","2022-04-06T15:49:51.000000Z",75.535000,200.000000,1920,1080,15092,"ffprobe_nb_frames",569533742
+./video_metadata.csv:70:"GX010146","GX010146.MP4","2022-04-06T20:30:17.000000Z",66.575000,200.000000,1920,1080,13300,"ffprobe_nb_frames",501479779
+./video_metadata.csv:71:"GX010147","GX010147.MP4","2022-04-06T20:41:00.000000Z",70.885000,200.000000,1920,1080,14162,"ffprobe_nb_frames",534346831
+./video_metadata.csv:72:"GX010148","GX010148.MP4","2022-04-06T20:51:28.000000Z",80.015000,200.000000,1920,1080,15988,"ffprobe_nb_frames",602838754
+./video_metadata.csv:73:"GX010149","GX010149.MP4","2022-04-07T11:48:45.000000Z",417.820000,200.000000,1920,1080,83550,"ffprobe_nb_frames",3150472819
+./video_metadata.csv:74:"GX010150","GX010150.MP4","2022-04-07T11:59:49.000000Z",75.105000,200.000000,1920,1080,15006,"ffprobe_nb_frames",566284327
+./video_metadata.csv:75:"GX010151","GX010151.MP4","2022-04-07T12:04:37.000000Z",75.810000,200.000000,1920,1080,15147,"ffprobe_nb_frames",571540270
+./video_metadata.csv:76:"GX010152","GX010152.MP4","2022-04-07T12:14:39.000000Z",75.420000,200.000000,1920,1080,15070,"ffprobe_nb_frames",568594160
+./video_metadata.csv:77:"GX010153","GX010153.MP4","2022-04-07T12:20:39.000000Z",75.755000,200.000000,1920,1080,15134,"ffprobe_nb_frames",570928834
+./video_metadata.csv:78:"GX010154","GX010154.MP4","2022-04-07T12:25:37.000000Z",75.805000,200.000000,1920,1080,15147,"ffprobe_nb_frames",571516136
+./video_metadata.csv:79:"GX010155","GX010155.MP4","2022-04-07T12:30:29.000000Z",74.805000,200.000000,1920,1080,14947,"ffprobe_nb_frames",564000400
+./video_metadata.csv:80:"GX010156","GX010156.MP4","2022-04-07T12:35:18.000000Z",74.800000,200.000000,1920,1080,14947,"ffprobe_nb_frames",563846804
+./video_metadata.csv:81:"GX010157","GX010157.MP4","2022-04-07T12:40:22.000000Z",74.530000,200.000000,1920,1080,14891,"ffprobe_nb_frames",561761719
+./video_metadata.csv:82:"GX010158","GX010158.MP4","2022-04-07T12:45:20.000000Z",75.090000,200.000000,1920,1080,15002,"ffprobe_nb_frames",565881161
+./video_metadata.csv:83:"GX010159","GX010159.MP4","2022-04-07T12:50:18.000000Z",77.045000,200.000000,1920,1080,15395,"ffprobe_nb_frames",580938460
+./video_metadata.csv:84:"GX010160","GX010160.MP4","2022-04-07T12:58:18.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004327010
+./video_metadata.csv:85:"GX010161","GX010161.MP4","2022-04-07T13:45:54.000000Z",76.540000,200.000000,1920,1080,15292,"ffprobe_nb_frames",576887207
+./video_metadata.csv:86:"GX010162","GX010162.MP4","2022-04-07T13:50:53.000000Z",75.740000,200.000000,1920,1080,15143,"ffprobe_nb_frames",571198255
+./video_metadata.csv:87:"GX010163","GX010163.MP4","2022-04-07T13:56:08.000000Z",76.190000,200.000000,1920,1080,15224,"ffprobe_nb_frames",574332587
+./video_metadata.csv:88:"GX010164","GX010164.MP4","2022-04-07T14:08:49.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004534088
+./video_metadata.csv:89:"GX010165","GX010165.MP4","2022-04-07T14:30:14.000000Z",75.325000,200.000000,1920,1080,15049,"ffprobe_nb_frames",567762187
+./video_metadata.csv:90:"GX010166","GX010166.MP4","2022-04-07T14:40:38.000000Z",77.125000,200.000000,1920,1080,15412,"ffprobe_nb_frames",581091366
+./video_metadata.csv:91:"GX010167","GX010167.MP4","2022-04-07T21:17:47.000000Z",74.045000,200.000000,1920,1080,14793,"ffprobe_nb_frames",557963256
+./video_metadata.csv:92:"GX010168","GX010168.MP4","2022-04-08T18:07:32.000000Z",77.035000,200.000000,1920,1080,15390,"ffprobe_nb_frames",580776234
+./video_metadata.csv:93:"GX010169","GX010169.MP4","2022-04-08T18:16:10.000000Z",80.650000,200.000000,1920,1080,16116,"ffprobe_nb_frames",607777106
+./video_metadata.csv:94:"GX010170","GX010170.MP4","2022-04-08T18:21:05.000000Z",74.590000,200.000000,1920,1080,14904,"ffprobe_nb_frames",561974128
+./video_metadata.csv:95:"GX010171","GX010171.MP4","2022-04-08T18:26:07.000000Z",74.660000,200.000000,1920,1080,14917,"ffprobe_nb_frames",562898800
+./video_metadata.csv:96:"GX010172","GX010172.MP4","2022-04-08T18:31:05.000000Z",75.110000,200.000000,1920,1080,15006,"ffprobe_nb_frames",566275291
+./video_metadata.csv:97:"GX010173","GX010173.MP4","2022-04-08T18:38:40.000000Z",81.125000,200.000000,1920,1080,16210,"ffprobe_nb_frames",611458863
+./video_metadata.csv:98:"GX010174","GX010174.MP4","2022-04-08T19:00:19.000000Z",74.215000,200.000000,1920,1080,14827,"ffprobe_nb_frames",559210010
+./video_metadata.csv:99:"GX010175","GX010175.MP4","2022-04-08T19:10:01.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004382898
+./video_metadata.csv:100:"GX010176","GX010176.MP4","2022-04-08T19:27:23.000000Z",75.185000,200.000000,1920,1080,15023,"ffprobe_nb_frames",566742588
+./video_metadata.csv:101:"GX010177","GX010177.MP4","2022-04-08T19:38:56.000000Z",74.475000,200.000000,1920,1080,14878,"ffprobe_nb_frames",561204371
+./video_metadata.csv:102:"GX010178","GX010178.MP4","2022-04-08T19:44:11.000000Z",75.300000,200.000000,1920,1080,15045,"ffprobe_nb_frames",567575539
+./video_metadata.csv:103:"GX010179","GX010179.MP4","2022-04-08T20:11:16.000000Z",75.105000,200.000000,1920,1080,15006,"ffprobe_nb_frames",566220421
+./video_metadata.csv:104:"GX010180","GX010180.MP4","2022-04-08T20:16:15.000000Z",79.950000,200.000000,1920,1080,15975,"ffprobe_nb_frames",602521948
+./video_metadata.csv:105:"GX010181","GX010181.MP4","2022-04-08T20:22:24.000000Z",74.810000,200.000000,1920,1080,14947,"ffprobe_nb_frames",563703097
+./video_metadata.csv:106:"GX010182","GX010182.MP4","2022-04-08T20:27:00.000000Z",84.690000,200.000000,1920,1080,16922,"ffprobe_nb_frames",638264771
+./video_metadata.csv:107:"GX010183","GX010183.MP4","2022-04-08T20:31:38.000000Z",355.780000,200.000000,1920,1080,71143,"ffprobe_nb_frames",2682700665
+./video_metadata.csv:108:"GX010184","GX010184.MP4","2022-04-08T20:41:10.000000Z",71.435000,200.000000,1920,1080,14273,"ffprobe_nb_frames",538332578
+./video_metadata.csv:109:"GX010185","GX010185.MP4","2022-04-09T17:21:09.000000Z",77.200000,200.000000,1920,1080,15425,"ffprobe_nb_frames",582031138
+./video_metadata.csv:110:"GX010186","GX010186.MP4","2022-04-09T17:36:03.000000Z",80.185000,200.000000,1920,1080,16022,"ffprobe_nb_frames",604333531
+./video_metadata.csv:111:"GX010187","GX010187.MP4","2022-04-09T17:48:11.000000Z",70.460000,200.000000,1920,1080,14076,"ffprobe_nb_frames",531012335
+./video_metadata.csv:112:"GX010188","GX010188.MP4","2022-04-09T18:07:47.000000Z",75.280000,200.000000,1920,1080,15041,"ffprobe_nb_frames",567316129
+./video_metadata.csv:113:"GX010189","GX010189.MP4","2022-04-09T18:15:05.000000Z",433.265000,200.000000,1920,1080,86639,"ffprobe_nb_frames",3266892109
+./video_metadata.csv:114:"GX010190","GX010190.MP4","2022-04-09T18:27:43.000000Z",69.775000,200.000000,1920,1080,13940,"ffprobe_nb_frames",525521862
+./video_metadata.csv:115:"GX010191","GX010191.MP4","2022-04-09T18:37:17.000000Z",79.400000,200.000000,1920,1080,15864,"ffprobe_nb_frames",598365546
+./video_metadata.csv:116:"GX010192","GX010192.MP4","2022-04-09T19:01:15.000000Z",76.745000,200.000000,1920,1080,15335,"ffprobe_nb_frames",578660607
+./video_metadata.csv:117:"GX010193","GX010193.MP4","2022-04-09T19:10:11.000000Z",365.860000,200.000000,1920,1080,73157,"ffprobe_nb_frames",2758565648
+./video_metadata.csv:118:"GX010194","GX010194.MP4","2022-04-09T19:21:14.000000Z",70.895000,200.000000,1920,1080,14166,"ffprobe_nb_frames",534118658
+./video_metadata.csv:119:"GX010195","GX010195.MP4","2022-04-11T15:52:32.000000Z",74.975000,200.000000,1920,1080,14981,"ffprobe_nb_frames",564811898
+./video_metadata.csv:120:"GX010196","GX010196.MP4","2022-04-11T15:57:28.000000Z",75.045000,200.000000,1920,1080,14994,"ffprobe_nb_frames",565418631
+./video_metadata.csv:121:"GX010197","GX010197.MP4","2022-04-11T16:02:22.000000Z",76.920000,200.000000,1920,1080,15369,"ffprobe_nb_frames",579257013
+./video_metadata.csv:122:"GX010198","GX010198.MP4","2022-04-11T16:07:12.000000Z",74.810000,200.000000,1920,1080,14947,"ffprobe_nb_frames",563516733
+./video_metadata.csv:123:"GX010199","GX010199.MP4","2022-04-11T16:17:17.000000Z",351.770000,200.000000,1920,1080,70349,"ffprobe_nb_frames",2652415028
+./video_metadata.csv:124:"GX010200","GX010200.MP4","2022-04-11T16:26:37.000000Z",74.920000,200.000000,1920,1080,14968,"ffprobe_nb_frames",564506808
+./video_metadata.csv:125:"GX010201","GX010201.MP4","2022-04-11T16:31:23.000000Z",65.930000,200.000000,1920,1080,13172,"ffprobe_nb_frames",496574377
+./video_metadata.csv:126:"GX010202","GX010202.MP4","2022-04-11T16:36:05.000000Z",75.155000,200.000000,1920,1080,15015,"ffprobe_nb_frames",565987889
+./video_metadata.csv:127:"GX010203","GX010203.MP4","2022-04-11T17:06:10.000000Z",74.960000,200.000000,1920,1080,14977,"ffprobe_nb_frames",564728332
+./video_metadata.csv:128:"GX010204","GX010204.MP4","2022-04-11T17:10:55.000000Z",74.590000,200.000000,1920,1080,14904,"ffprobe_nb_frames",561964817
+./video_metadata.csv:129:"GX010205","GX010205.MP4","2022-04-11T17:32:14.000000Z",72.380000,200.000000,1920,1080,14460,"ffprobe_nb_frames",545496398
+./video_metadata.csv:130:"GX010206","GX010206.MP4","2022-04-11T17:40:31.000000Z",74.640000,200.000000,1920,1080,14913,"ffprobe_nb_frames",562200237
+./video_metadata.csv:131:"GX010207","GX010207.MP4","2022-04-11T17:46:07.000000Z",75.380000,200.000000,1920,1080,15070,"ffprobe_nb_frames",568333099
+./video_metadata.csv:132:"GX010208","GX010208.MP4","2022-04-11T18:37:27.000000Z",74.915000,200.000000,1920,1080,14968,"ffprobe_nb_frames",564828442
+./video_metadata.csv:133:"GX010209","GX010209.MP4","2022-04-11T18:42:04.000000Z",76.345000,200.000000,1920,1080,15254,"ffprobe_nb_frames",575209362
+./video_metadata.csv:134:"GX010210","GX010210.MP4","2022-04-11T18:46:42.000000Z",75.545000,200.000000,1920,1080,15096,"ffprobe_nb_frames",568998160
+./video_metadata.csv:135:"GX010211","GX010211.MP4","2022-04-11T18:51:21.000000Z",75.065000,200.000000,1920,1080,15006,"ffprobe_nb_frames",566052395
+./video_metadata.csv:136:"GX010212","GX010212.MP4","2022-04-11T18:56:01.000000Z",74.915000,200.000000,1920,1080,14968,"ffprobe_nb_frames",564546153
+./video_metadata.csv:137:"GX010213","GX010213.MP4","2022-04-11T19:09:02.000000Z",75.300000,200.000000,1920,1080,15045,"ffprobe_nb_frames",567658813
+./video_metadata.csv:138:"GX010214","GX010214.MP4","2022-04-11T19:13:50.000000Z",74.575000,200.000000,1920,1080,14900,"ffprobe_nb_frames",562186741
+./video_metadata.csv:139:"GX010215","GX010215.MP4","2022-04-11T19:18:36.000000Z",74.520000,200.000000,1920,1080,14891,"ffprobe_nb_frames",561805926
+./video_metadata.csv:140:"GX010216","GX010216.MP4","2022-04-11T19:23:24.000000Z",74.825000,200.000000,1920,1080,14951,"ffprobe_nb_frames",563881448
+./video_metadata.csv:141:"GX010217","GX010217.MP4","2022-04-11T19:28:11.000000Z",75.165000,200.000000,1920,1080,15019,"ffprobe_nb_frames",566735538
+./video_metadata.csv:142:"GX010218","GX010218.MP4","2022-04-11T19:34:10.000000Z",74.575000,200.000000,1920,1080,14900,"ffprobe_nb_frames",561939656
+./video_metadata.csv:143:"GX010219","GX010219.MP4","2022-04-11T19:38:58.000000Z",74.940000,200.000000,1920,1080,14972,"ffprobe_nb_frames",564601128
+./video_metadata.csv:144:"GX010220","GX010220.MP4","2022-04-11T19:43:33.000000Z",75.250000,200.000000,1920,1080,15036,"ffprobe_nb_frames",567289292
+./video_metadata.csv:145:"GX010221","GX010221.MP4","2022-04-11T19:48:20.000000Z",76.175000,200.000000,1920,1080,15220,"ffprobe_nb_frames",574187441
+./video_metadata.csv:146:"GX010222","GX010222.MP4","2022-04-11T19:53:08.000000Z",74.855000,200.000000,1920,1080,14955,"ffprobe_nb_frames",564222529
+./video_metadata.csv:147:"GX010223","GX010223.MP4","2022-04-11T19:57:56.000000Z",361.925000,200.000000,1920,1080,72376,"ffprobe_nb_frames",2729257817
+./video_metadata.csv:148:"GX010224","GX010224.MP4","2022-04-11T20:07:30.000000Z",75.480000,200.000000,1920,1080,15092,"ffprobe_nb_frames",569344001
+./video_metadata.csv:149:"GX010225","GX010225.MP4","2022-04-11T20:12:18.000000Z",75.535000,200.000000,1920,1080,15092,"ffprobe_nb_frames",569345266
+./video_metadata.csv:150:"GX010226","GX010226.MP4","2022-04-11T20:17:11.000000Z",69.245000,200.000000,1920,1080,13833,"ffprobe_nb_frames",521998284
+./video_metadata.csv:151:"GX010227","GX010227.MP4","2022-04-11T20:22:37.000000Z",75.755000,200.000000,1920,1080,15134,"ffprobe_nb_frames",570714989
+./video_metadata.csv:152:"GX010228","GX010228.MP4","2022-04-11T20:27:27.000000Z",74.875000,200.000000,1920,1080,14959,"ffprobe_nb_frames",564366976
+./video_metadata.csv:153:"GX010229","GX010229.MP4","2022-04-11T20:32:14.000000Z",75.215000,200.000000,1920,1080,15028,"ffprobe_nb_frames",566949022
+./video_metadata.csv:154:"GX010230","GX010230.MP4","2022-04-11T20:37:02.000000Z",74.910000,200.000000,1920,1080,14968,"ffprobe_nb_frames",564665939
+./video_metadata.csv:155:"GX010231","GX010231.MP4","2022-04-11T20:41:56.000000Z",69.605000,200.000000,1920,1080,13906,"ffprobe_nb_frames",524738436
+./video_metadata.csv:156:"GX010232","GX010232.MP4","2022-04-11T20:46:38.000000Z",75.130000,200.000000,1920,1080,15011,"ffprobe_nb_frames",566409245
+./video_metadata.csv:157:"GX010233","GX010233.MP4","2022-04-11T20:51:26.000000Z",364.150000,200.000000,1920,1080,72815,"ffprobe_nb_frames",2745563594
+./video_metadata.csv:158:"GX010234","GX010234.MP4","2022-04-11T21:01:02.000000Z",75.280000,200.000000,1920,1080,15041,"ffprobe_nb_frames",567570898
+./video_metadata.csv:159:"GX010235","GX010235.MP4","2022-04-11T21:06:00.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004365465
+./video_metadata.csv:160:"GX010236","GX010236.MP4","2022-04-11T21:20:25.000000Z",70.535000,200.000000,1920,1080,14093,"ffprobe_nb_frames",531763589
+./video_metadata.csv:161:"GX010237","GX010237.MP4","2022-04-11T21:25:09.000000Z",36.330667,200.000000,1920,1080,7262,"ffprobe_nb_frames",274069289
+./video_metadata.csv:162:"GX010238","GX010238.MP4","2022-04-13T13:04:08.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004568350
+./video_metadata.csv:163:"GX010239","GX010239.MP4","2022-04-13T19:27:23.000000Z",358.910000,200.000000,1920,1080,71766,"ffprobe_nb_frames",2706123299
+./video_metadata.csv:164:"GX010240","GX010240.MP4","2022-04-13T19:36:51.000000Z",75.140000,200.000000,1920,1080,15015,"ffprobe_nb_frames",566130444
+./video_metadata.csv:165:"GX010241","GX010241.MP4","2022-04-13T19:41:36.000000Z",75.875000,200.000000,1920,1080,15160,"ffprobe_nb_frames",572004633
+./video_metadata.csv:166:"GX010242","GX010242.MP4","2022-04-13T19:46:21.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004329556
+./video_metadata.csv:167:"GX010243","GX010243.MP4","2022-04-13T20:19:34.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004255537
+./video_metadata.csv:168:"GX010244","GX010244.MP4","2022-04-13T21:11:31.000000Z",357.200000,200.000000,1920,1080,71425,"ffprobe_nb_frames",2693308444
+./video_metadata.csv:169:"GX010245","GX010245.MP4","2022-04-13T21:53:46.000000Z",75.980000,200.000000,1920,1080,15181,"ffprobe_nb_frames",572707377
+./video_metadata.csv:170:"GX010246","GX010246.MP4","2022-04-13T21:58:29.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004226604
+./video_metadata.csv:171:"GX010247","GX010247.MP4","2022-04-14T18:04:09.000000Z",76.255000,200.000000,1920,1080,15237,"ffprobe_nb_frames",574470944
+./video_metadata.csv:172:"GX010248","GX010248.MP4","2022-04-14T18:08:56.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004241226
+./video_metadata.csv:173:"GX010249","GX010249.MP4","2022-04-14T18:23:12.000000Z",75.675000,200.000000,1920,1080,15122,"ffprobe_nb_frames",570234147
+./video_metadata.csv:174:"GX010250","GX010250.MP4","2022-04-14T18:27:58.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004315114
+./video_metadata.csv:175:"GX010251","GX010251.MP4","2022-04-15T14:52:26.000000Z",74.365000,200.000000,1920,1080,14857,"ffprobe_nb_frames",560091213
+./video_metadata.csv:176:"GX010252","GX010252.MP4","2022-04-15T15:02:02.000000Z",76.750000,200.000000,1920,1080,15335,"ffprobe_nb_frames",578122251
+./video_metadata.csv:177:"GX010253","GX010253.MP4","2022-04-15T15:06:51.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004612287
+./video_metadata.csv:178:"GX010254","GX010254.MP4","2022-04-15T15:21:17.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004091296
+./video_metadata.csv:179:"GX010255","GX010255.MP4","2022-04-15T21:58:23.000000Z",70.425000,200.000000,1920,1080,14072,"ffprobe_nb_frames",530703998
+./video_metadata.csv:180:"GX010256","GX010256.MP4","2022-04-15T22:03:01.000000Z",79.960000,200.000000,1920,1080,15979,"ffprobe_nb_frames",602587546
+./video_metadata.csv:181:"GX010257","GX010257.MP4","2022-04-15T22:07:49.000000Z",70.310000,200.000000,1920,1080,14046,"ffprobe_nb_frames",529838147
+./video_metadata.csv:182:"GX010258","GX010258.MP4","2022-04-15T22:12:27.000000Z",75.720000,200.000000,1920,1080,15130,"ffprobe_nb_frames",570388356
+./video_metadata.csv:183:"GX010259","GX010259.MP4","2022-04-15T22:17:10.000000Z",74.770000,200.000000,1920,1080,14938,"ffprobe_nb_frames",563670402
+./video_metadata.csv:184:"GX010260","GX010260.MP4","2022-04-15T22:21:54.000000Z",78.685000,200.000000,1920,1080,15723,"ffprobe_nb_frames",593189463
+./video_metadata.csv:185:"GX010261","GX010261.MP4","2022-04-15T22:31:18.000000Z",358.565000,200.000000,1920,1080,71698,"ffprobe_nb_frames",2703388487
+./video_metadata.csv:186:"GX010262","GX010262.MP4","2022-04-15T22:40:43.000000Z",76.320000,200.000000,1920,1080,15250,"ffprobe_nb_frames",575108316
+./video_metadata.csv:187:"GX010263","GX010263.MP4","2022-04-16T19:57:37.000000Z",79.960000,200.000000,1920,1080,15979,"ffprobe_nb_frames",602893944
+./video_metadata.csv:188:"GX010264","GX010264.MP4","2022-04-16T20:02:22.000000Z",75.550000,200.000000,1920,1080,15096,"ffprobe_nb_frames",569216462
+./video_metadata.csv:189:"GX010265","GX010265.MP4","2022-04-16T20:06:55.000000Z",75.410000,200.000000,1920,1080,15066,"ffprobe_nb_frames",568550220
+./video_metadata.csv:190:"GX010266","GX010266.MP4","2022-04-16T20:11:39.000000Z",75.150000,200.000000,1920,1080,15015,"ffprobe_nb_frames",566144385
+./video_metadata.csv:191:"GX010267","GX010267.MP4","2022-04-16T20:16:30.000000Z",68.915000,200.000000,1920,1080,13769,"ffprobe_nb_frames",519407762
+./video_metadata.csv:192:"GX010268","GX010268.MP4","2022-04-16T20:21:13.000000Z",355.535000,200.000000,1920,1080,71092,"ffprobe_nb_frames",2680677256
+./video_metadata.csv:193:"GX010269","GX010269.MP4","2022-04-16T20:30:28.000000Z",75.035000,200.000000,1920,1080,14994,"ffprobe_nb_frames",565463526
+./video_metadata.csv:194:"GX010270","GX010270.MP4","2022-04-16T20:35:20.000000Z",70.045000,200.000000,1920,1080,13995,"ffprobe_nb_frames",527526644
+./video_metadata.csv:195:"GX010271","GX010271.MP4","2022-04-16T20:40:01.000000Z",75.615000,200.000000,1920,1080,15109,"ffprobe_nb_frames",570073687
+./video_metadata.csv:196:"GX010272","GX010272.MP4","2022-04-16T20:44:50.000000Z",363.525000,200.000000,1920,1080,72700,"ffprobe_nb_frames",2741283718
+./video_metadata.csv:197:"GX010273","GX010273.MP4","2022-04-16T20:54:26.000000Z",75.560000,200.000000,1920,1080,15105,"ffprobe_nb_frames",569708299
+./video_metadata.csv:198:"GX010274","GX010274.MP4","2022-04-16T20:59:15.000000Z",364.340000,200.000000,1920,1080,72854,"ffprobe_nb_frames",2746843953
+./video_metadata.csv:199:"GX010275","GX010275.MP4","2022-04-16T21:08:54.000000Z",75.995000,200.000000,1920,1080,15186,"ffprobe_nb_frames",573052249
+./video_metadata.csv:200:"GX010276","GX010276.MP4","2022-04-16T21:13:44.000000Z",74.980000,200.000000,1920,1080,14981,"ffprobe_nb_frames",564939754
+./video_metadata.csv:201:"GX010277","GX010277.MP4","2022-04-16T21:18:33.000000Z",75.055000,200.000000,1920,1080,14998,"ffprobe_nb_frames",565806478
+./video_metadata.csv:202:"GX010278","GX010278.MP4","2022-04-16T21:23:27.000000Z",74.750000,200.000000,1920,1080,14934,"ffprobe_nb_frames",563240610
+./video_metadata.csv:203:"GX010279","GX010279.MP4","2022-04-16T21:28:17.000000Z",78.965000,200.000000,1920,1080,15779,"ffprobe_nb_frames",595358608
+./video_metadata.csv:204:"GX010280","GX010280.MP4","2022-04-16T21:32:59.000000Z",363.770000,200.000000,1920,1080,72739,"ffprobe_nb_frames",2742594210
+./video_metadata.csv:205:"GX010281","GX010281.MP4","2022-04-16T21:47:27.000000Z",70.605000,200.000000,1920,1080,14106,"ffprobe_nb_frames",532231435
+./video_metadata.csv:206:"GX010282","GX010282.MP4","2022-04-17T17:25:12.000000Z",355.600000,200.000000,1920,1080,71105,"ffprobe_nb_frames",2681156767
+./video_metadata.csv:207:"GX010283","GX010283.MP4","2022-04-17T17:34:42.000000Z",71.740000,200.000000,1920,1080,14332,"ffprobe_nb_frames",540562723
+./video_metadata.csv:208:"GX010284","GX010284.MP4","2022-04-17T17:39:24.000000Z",74.845000,200.000000,1920,1080,14955,"ffprobe_nb_frames",563953487
+./video_metadata.csv:209:"GX010285","GX010285.MP4","2022-04-17T17:44:09.000000Z",74.940000,200.000000,1920,1080,14972,"ffprobe_nb_frames",564364055
+./video_metadata.csv:210:"GX010286","GX010286.MP4","2022-04-17T17:48:53.000000Z",80.905000,200.000000,1920,1080,16167,"ffprobe_nb_frames",609575662
+./video_metadata.csv:211:"GX010287","GX010287.MP4","2022-04-17T17:53:43.000000Z",75.685000,200.000000,1920,1080,15122,"ffprobe_nb_frames",570058081
+./video_metadata.csv:212:"GX010288","GX010288.MP4","2022-04-19T12:04:43.000000Z",75.221333,200.000000,1920,1080,15043,"ffprobe_nb_frames",567107320
+./video_metadata.csv:213:"GX010289","GX010289.MP4","2022-04-19T14:29:16.000000Z",77.781333,200.000000,1920,1080,15555,"ffprobe_nb_frames",586522443
+./video_metadata.csv:214:"GX010290","GX010290.MP4","2022-04-20T10:16:45.000000Z",40.533333,200.000000,1920,1080,8105,"ffprobe_nb_frames",305860476
+./video_metadata.csv:215:"GX010291","GX010291.MP4","2022-04-20T16:26:06.000000Z",75.205000,200.000000,1920,1080,15028,"ffprobe_nb_frames",566907533
+./video_metadata.csv:216:"GX010292","GX010292.MP4","2022-04-20T16:30:48.000000Z",74.615000,200.000000,1920,1080,14908,"ffprobe_nb_frames",562081173
+./video_metadata.csv:217:"GX010293","GX010293.MP4","2022-04-20T16:35:30.000000Z",50.197333,200.000000,1920,1080,10039,"ffprobe_nb_frames",378251556
+./video_metadata.csv:218:"GX010294","GX010294.MP4","2022-04-20T18:37:17.000000Z",75.550000,200.000000,1920,1080,15096,"ffprobe_nb_frames",568951300
+./video_metadata.csv:219:"GX010295","GX010295.MP4","2022-04-20T18:41:59.000000Z",75.920000,200.000000,1920,1080,15169,"ffprobe_nb_frames",572064209
+./video_metadata.csv:220:"GX010296","GX010296.MP4","2022-04-20T18:46:41.000000Z",358.685000,200.000000,1920,1080,71723,"ffprobe_nb_frames",2704348079
+./video_metadata.csv:221:"GX010297","GX010297.MP4","2022-04-20T19:11:20.000000Z",74.615000,200.000000,1920,1080,14908,"ffprobe_nb_frames",561952926
+./video_metadata.csv:222:"GX010298","GX010298.MP4","2022-04-20T19:15:57.000000Z",77.500000,200.000000,1920,1080,15484,"ffprobe_nb_frames",584186635
+./video_metadata.csv:223:"GX010299","GX010299.MP4","2022-04-20T19:20:42.000000Z",71.185000,200.000000,1920,1080,14221,"ffprobe_nb_frames",536154431
+./video_metadata.csv:224:"GX010300","GX010300.MP4","2022-04-20T19:34:50.000000Z",80.505000,200.000000,1920,1080,16086,"ffprobe_nb_frames",606551479
+./video_metadata.csv:225:"GX010301","GX010301.MP4","2022-04-20T19:39:46.000000Z",70.620000,200.000000,1920,1080,14110,"ffprobe_nb_frames",532201650
+./video_metadata.csv:226:"GX010302","GX010302.MP4","2022-04-20T19:44:20.000000Z",75.270000,200.000000,1920,1080,15041,"ffprobe_nb_frames",567466041
+./video_metadata.csv:227:"GX010303","GX010303.MP4","2022-04-20T19:48:56.000000Z",76.520000,200.000000,1920,1080,15288,"ffprobe_nb_frames",576512194
+./video_metadata.csv:228:"GX010304","GX010304.MP4","2022-04-20T19:58:26.000000Z",358.925000,200.000000,1920,1080,71770,"ffprobe_nb_frames",2706372601
+./video_metadata.csv:229:"GX020055","GX020055.MP4","2022-03-01T14:57:46.000000Z",120.280000,200.000000,1920,1080,24041,"ffprobe_nb_frames",906802543
+./video_metadata.csv:230:"GX020097","GX020097.MP4","2022-03-14T21:55:36.000000Z",418.385000,200.000000,1920,1080,83663,"ffprobe_nb_frames",3154711264
+./video_metadata.csv:231:"GX020098","GX020098.MP4","2022-03-14T22:16:55.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004351246
+./video_metadata.csv:232:"GX020108","GX020108.MP4","2022-03-15T22:14:34.000000Z",487.215000,200.000000,1920,1080,97427,"ffprobe_nb_frames",3673967703
+./video_metadata.csv:233:"GX020117","GX020117.MP4","2022-03-16T22:44:42.000000Z",15.650000,200.000000,1920,1080,3117,"ffprobe_nb_frames",117567457
+./video_metadata.csv:234:"GX020129","GX020129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004289360
+./video_metadata.csv:235:"GX020160","GX020160.MP4","2022-04-07T12:58:18.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004513205
+./video_metadata.csv:236:"GX020164","GX020164.MP4","2022-04-07T14:08:49.000000Z",135.140000,200.000000,1920,1080,27014,"ffprobe_nb_frames",1018716838
+./video_metadata.csv:237:"GX020175","GX020175.MP4","2022-04-08T19:10:01.000000Z",245.950000,200.000000,1920,1080,49175,"ffprobe_nb_frames",1854202730
+./video_metadata.csv:238:"GX020235","GX020235.MP4","2022-04-11T21:06:00.000000Z",117.165000,200.000000,1920,1080,23418,"ffprobe_nb_frames",883202582
+./video_metadata.csv:239:"GX020238","GX020238.MP4","2022-04-13T13:04:08.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004126751
+./video_metadata.csv:240:"GX020242","GX020242.MP4","2022-04-13T19:46:21.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004155945
+./video_metadata.csv:241:"GX020243","GX020243.MP4","2022-04-13T20:19:34.000000Z",385.435000,200.000000,1920,1080,77071,"ffprobe_nb_frames",2906156858
+./video_metadata.csv:242:"GX020246","GX020246.MP4","2022-04-13T21:58:29.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004443693
+./video_metadata.csv:243:"GX020248","GX020248.MP4","2022-04-14T18:08:56.000000Z",114.350000,200.000000,1920,1080,22854,"ffprobe_nb_frames",862069806
+./video_metadata.csv:244:"GX020250","GX020250.MP4","2022-04-14T18:27:58.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004363399
+./video_metadata.csv:245:"GX020253","GX020253.MP4","2022-04-15T15:06:51.000000Z",121.795000,200.000000,1920,1080,24343,"ffprobe_nb_frames",917711653
+./video_metadata.csv:246:"GX020254","GX020254.MP4","2022-04-15T15:21:17.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004792259
+./video_metadata.csv:247:"GX030098","GX030098.MP4","2022-03-14T22:16:55.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004060814
+./video_metadata.csv:248:"GX030129","GX030129.MP4","2022-04-04T18:10:23.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004307131
+./video_metadata.csv:249:"GX030160","GX030160.MP4","2022-04-07T12:58:18.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004302560
+./video_metadata.csv:250:"GX030238","GX030238.MP4","2022-04-13T13:04:08.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004286894
+./video_metadata.csv:251:"GX030242","GX030242.MP4","2022-04-13T19:46:21.000000Z",156.525000,200.000000,1920,1080,31300,"ffprobe_nb_frames",1180249658
+./video_metadata.csv:252:"GX030246","GX030246.MP4","2022-04-13T21:58:29.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004390853
+./video_metadata.csv:253:"GX030250","GX030250.MP4","2022-04-14T18:27:58.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004280735
+./video_metadata.csv:254:"GX030254","GX030254.MP4","2022-04-15T15:21:17.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004005940
+./video_metadata.csv:255:"GX040098","GX040098.MP4","2022-03-14T22:16:55.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004569825
+./video_metadata.csv:256:"GX040129","GX040129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004331962
+./video_metadata.csv:257:"GX040160","GX040160.MP4","2022-04-07T12:58:18.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004316023
+./video_metadata.csv:258:"GX040238","GX040238.MP4","2022-04-13T13:04:08.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004229113
+./video_metadata.csv:259:"GX040246","GX040246.MP4","2022-04-13T21:58:29.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004059478
+./video_metadata.csv:260:"GX040250","GX040250.MP4","2022-04-14T18:27:58.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004180011
+./video_metadata.csv:261:"GX040254","GX040254.MP4","2022-04-15T15:21:17.000000Z",193.130667,200.000000,1920,1080,38623,"ffprobe_nb_frames",1456691266
+./video_metadata.csv:262:"GX050098","GX050098.MP4","2022-03-14T22:16:55.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004083801
+./video_metadata.csv:263:"GX050129","GX050129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004371351
+./video_metadata.csv:264:"GX050160","GX050160.MP4","2022-04-07T12:58:18.000000Z",522.345000,200.000000,1920,1080,104455,"ffprobe_nb_frames",3938619123
+./video_metadata.csv:265:"GX050238","GX050238.MP4","2022-04-13T13:04:08.000000Z",300.565333,200.000000,1920,1080,60112,"ffprobe_nb_frames",2266679813
+./video_metadata.csv:266:"GX050246","GX050246.MP4","2022-04-13T21:58:29.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004585735
+./video_metadata.csv:267:"GX050250","GX050250.MP4","2022-04-14T18:27:58.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004534760
+./video_metadata.csv:268:"GX060098","GX060098.MP4","2022-03-14T22:16:55.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004749628
+./video_metadata.csv:269:"GX060129","GX060129.MP4","2022-04-04T18:10:23.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4003728616
+./video_metadata.csv:270:"GX060246","GX060246.MP4","2022-04-13T21:58:29.000000Z",185.706667,200.000000,1920,1080,37141,"ffprobe_nb_frames",1400552917
+./video_metadata.csv:271:"GX060250","GX060250.MP4","2022-04-14T18:27:58.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004301643
+./video_metadata.csv:272:"GX070098","GX070098.MP4","2022-03-14T22:16:55.000000Z",369.962667,200.000000,1920,1080,73990,"ffprobe_nb_frames",2789473483
+./video_metadata.csv:273:"GX070129","GX070129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004485048
+./video_metadata.csv:274:"GX070250","GX070250.MP4","2022-04-14T18:27:58.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004236177
+./video_metadata.csv:275:"GX080129","GX080129.MP4","2022-04-04T18:10:23.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004668811
+./video_metadata.csv:276:"GX080250","GX080250.MP4","2022-04-14T18:27:58.000000Z",531.000000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004421534
+./video_metadata.csv:277:"GX090129","GX090129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004176185
+./video_metadata.csv:278:"GX090250","GX090250.MP4","2022-04-14T18:27:58.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004253532
+./video_metadata.csv:279:"GX100129","GX100129.MP4","2022-04-04T18:10:23.000000Z",531.008000,200.000000,1920,1080,106200,"ffprobe_nb_frames",4004580375
+./video_metadata.csv:280:"GX100250","GX100250.MP4","2022-04-14T18:27:58.000000Z",177.180000,200.000000,1920,1080,35436,"ffprobe_nb_frames",1336102509
+./video_metadata.csv:281:"GX110129","GX110129.MP4","2022-04-04T18:10:23.000000Z",190.335000,200.000000,1920,1080,38067,"ffprobe_nb_frames",1435275964
+./video_usage_raw.txt:1:src/create_lk_validation_timeseries.py:28:    --input-csv /pfad/GX010262_lucas_kanade.csv \
+./video_usage_raw.txt:2:src/create_lk_validation_timeseries.py:29:    --output-csv /pfad/GX010262_lucas_kanade_timeseries.csv
+./video_usage_raw.txt:3:src/create_lk_validation_timeseries.py:54:    DEFAULT_OUTPUT_DIRECTORY / "GX010262_lucas_kanade.csv"
+./video_usage_raw.txt:4:src/create_lk_validation_timeseries.py:58:    DEFAULT_OUTPUT_DIRECTORY / "GX010262_lucas_kanade_timeseries.csv"
+./video_usage_raw.txt:5:src/create_lk_validation_timeseries.py:63:    / "GX010262_lucas_kanade_timeseries_summary.json"
+./video_usage_raw.txt:6:src/create_lk_video_acceleration.py:13:    "GX010262_lucas_kanade.csv"
+./video_usage_raw.txt:7:src/create_lk_video_acceleration.py:19:    "GX010262_lk_video_acceleration_m_s2.csv.csv"
+./video_usage_raw.txt:8:src/validate_inner_pipe_signal.py:299:    plt.title("GX010044 - Inner pipe tracking signal")
+./video_usage_raw.txt:9:src/validate_video_signals_automatic.py:11:      --video-csv outputs/Lucas_Kanade_CPU7/GX010049_results_inner_pipe_track_timeseries.csv \
+./video_usage_raw.txt:10:src/validate_video_signals_automatic.py:13:      --output-dir outputs/signal_validation/GX010049 \
+./video_usage_raw.txt:11:src/validate_video_signals_automatic.py:14:      --video-id GX010049 \
+./video_usage_raw.txt:12:src/validate_video_vs_imu_v2.py:33:    --video-csv outputs/GX010044_results_inner_pipe_track_timeseries.csv \
+./video_usage_raw.txt:13:src/validate_video_vs_imu_v2.py:39:    --output-dir outputs/validation/GX010044
+./video_usage_raw.txt:14:extract_iou_frames_gx010044.py:4:video_path = "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4"
+./videos_found_in_results.txt:1:GX010043
+./videos_found_in_results.txt:2:GX010044
+./videos_found_in_results.txt:3:GX010045
+./videos_found_in_results.txt:4:GX010046
+./videos_found_in_results.txt:5:GX010047
+./videos_found_in_results.txt:6:GX010048
+./videos_found_in_results.txt:7:GX010049
+./videos_found_in_results.txt:8:GX010050
+./videos_found_in_results.txt:9:GX010051
+./videos_found_in_results.txt:10:GX010052
+./videos_found_in_results.txt:11:GX010053
+./videos_found_in_results.txt:12:GX010054
+./videos_found_in_results.txt:13:GX010055
+./videos_found_in_results.txt:14:GX010081
+./videos_found_in_results.txt:15:GX010090
+./videos_found_in_results.txt:16:GX010091
+./videos_found_in_results.txt:17:GX010092
+./videos_found_in_results.txt:18:GX010093
+./videos_found_in_results.txt:19:GX010094
+./videos_found_in_results.txt:20:GX010095
+./videos_found_in_results.txt:21:GX010096
+./videos_found_in_results.txt:22:GX010097
+./videos_found_in_results.txt:23:GX010098
+./videos_found_in_results.txt:24:GX010099
+./videos_found_in_results.txt:25:GX010100
+./videos_found_in_results.txt:26:GX010101
+./videos_found_in_results.txt:27:GX010102
+./videos_found_in_results.txt:28:GX010103
+./videos_found_in_results.txt:29:GX010104
+./videos_found_in_results.txt:30:GX010105
+./videos_found_in_results.txt:31:GX010106
+./videos_found_in_results.txt:32:GX010107
+./videos_found_in_results.txt:33:GX010108
+./videos_found_in_results.txt:34:GX010109
+./videos_found_in_results.txt:35:GX010110
+./videos_found_in_results.txt:36:GX010111
+./videos_found_in_results.txt:37:GX010112
+./videos_found_in_results.txt:38:GX010113
+./videos_found_in_results.txt:39:GX010114
+./videos_found_in_results.txt:40:GX010115
+./videos_found_in_results.txt:41:GX010116
+./videos_found_in_results.txt:42:GX010117
+./videos_found_in_results.txt:43:GX010118
+./videos_found_in_results.txt:44:GX010119
+./videos_found_in_results.txt:45:GX010122
+./videos_found_in_results.txt:46:GX010123
+./videos_found_in_results.txt:47:GX010124
+./videos_found_in_results.txt:48:GX010125
+./videos_found_in_results.txt:49:GX010126
+./videos_found_in_results.txt:50:GX010127
+./videos_found_in_results.txt:51:GX010128
+./videos_found_in_results.txt:52:GX010129
+./videos_found_in_results.txt:53:GX010130
+./videos_found_in_results.txt:54:GX010131
+./videos_found_in_results.txt:55:GX010132
+./videos_found_in_results.txt:56:GX010133
+./videos_found_in_results.txt:57:GX010134
+./videos_found_in_results.txt:58:GX010135
+./videos_found_in_results.txt:59:GX010136
+./videos_found_in_results.txt:60:GX010137
+./videos_found_in_results.txt:61:GX010138
+./videos_found_in_results.txt:62:GX010139
+./videos_found_in_results.txt:63:GX010140
+./videos_found_in_results.txt:64:GX010141
+./videos_found_in_results.txt:65:GX010142
+./videos_found_in_results.txt:66:GX010143
+./videos_found_in_results.txt:67:GX010144
+./videos_found_in_results.txt:68:GX010145
+./videos_found_in_results.txt:69:GX010146
+./videos_found_in_results.txt:70:GX010147
+./videos_found_in_results.txt:71:GX010148
+./videos_found_in_results.txt:72:GX010149
+./videos_found_in_results.txt:73:GX010150
+./videos_found_in_results.txt:74:GX010151
+./videos_found_in_results.txt:75:GX010152
+./videos_found_in_results.txt:76:GX010153
+./videos_found_in_results.txt:77:GX010154
+./videos_found_in_results.txt:78:GX010155
+./videos_found_in_results.txt:79:GX010156
+./videos_found_in_results.txt:80:GX010157
+./videos_found_in_results.txt:81:GX010158
+./videos_found_in_results.txt:82:GX010159
+./videos_found_in_results.txt:83:GX010160
+./videos_found_in_results.txt:84:GX010161
+./videos_found_in_results.txt:85:GX010162
+./videos_found_in_results.txt:86:GX010163
+./videos_found_in_results.txt:87:GX010164
+./videos_found_in_results.txt:88:GX010165
+./videos_found_in_results.txt:89:GX010166
+./videos_found_in_results.txt:90:GX010167
+./videos_found_in_results.txt:91:GX010168
+./videos_found_in_results.txt:92:GX010169
+./videos_found_in_results.txt:93:GX010170
+./videos_found_in_results.txt:94:GX010171
+./videos_found_in_results.txt:95:GX010172
+./videos_found_in_results.txt:96:GX010173
+./videos_found_in_results.txt:97:GX010174
+./videos_found_in_results.txt:98:GX010175
+./videos_found_in_results.txt:99:GX010176
+./videos_found_in_results.txt:100:GX010177
+./videos_found_in_results.txt:101:GX010178
+./videos_found_in_results.txt:102:GX010179
+./videos_found_in_results.txt:103:GX010180
+./videos_found_in_results.txt:104:GX010181
+./videos_found_in_results.txt:105:GX010182
+./videos_found_in_results.txt:106:GX010183
+./videos_found_in_results.txt:107:GX010184
+./videos_found_in_results.txt:108:GX010185
+./videos_found_in_results.txt:109:GX010186
+./videos_found_in_results.txt:110:GX010187
+./videos_found_in_results.txt:111:GX010188
+./videos_found_in_results.txt:112:GX010189
+./videos_found_in_results.txt:113:GX010190
+./videos_found_in_results.txt:114:GX010191
+./videos_found_in_results.txt:115:GX010192
+./videos_found_in_results.txt:116:GX010193
+./videos_found_in_results.txt:117:GX010194
+./videos_found_in_results.txt:118:GX010195
+./videos_found_in_results.txt:119:GX010196
+./videos_found_in_results.txt:120:GX010197
+./videos_found_in_results.txt:121:GX010198
+./videos_found_in_results.txt:122:GX010199
+./videos_found_in_results.txt:123:GX010200
+./videos_found_in_results.txt:124:GX010201
+./videos_found_in_results.txt:125:GX010202
+./videos_found_in_results.txt:126:GX010203
+./videos_found_in_results.txt:127:GX010204
+./videos_found_in_results.txt:128:GX010205
+./videos_found_in_results.txt:129:GX010206
+./videos_found_in_results.txt:130:GX010207
+./videos_found_in_results.txt:131:GX010208
+./videos_found_in_results.txt:132:GX010209
+./videos_found_in_results.txt:133:GX010210
+./videos_found_in_results.txt:134:GX010211
+./videos_found_in_results.txt:135:GX010212
+./videos_found_in_results.txt:136:GX010213
+./videos_found_in_results.txt:137:GX010214
+./videos_found_in_results.txt:138:GX010215
+./videos_found_in_results.txt:139:GX010216
+./videos_found_in_results.txt:140:GX010217
+./videos_found_in_results.txt:141:GX010218
+./videos_found_in_results.txt:142:GX010219
+./videos_found_in_results.txt:143:GX010220
+./videos_found_in_results.txt:144:GX010221
+./videos_found_in_results.txt:145:GX010222
+./videos_found_in_results.txt:146:GX010223
+./videos_found_in_results.txt:147:GX010224
+./videos_found_in_results.txt:148:GX010225
+./videos_found_in_results.txt:149:GX010226
+./videos_found_in_results.txt:150:GX010227
+./videos_found_in_results.txt:151:GX010228
+./videos_found_in_results.txt:152:GX010229
+./videos_found_in_results.txt:153:GX010230
+./videos_found_in_results.txt:154:GX010231
+./videos_found_in_results.txt:155:GX010232
+./videos_found_in_results.txt:156:GX010233
+./videos_found_in_results.txt:157:GX010234
+./videos_found_in_results.txt:158:GX010235
+./videos_found_in_results.txt:159:GX010236
+./videos_found_in_results.txt:160:GX010237
+./videos_found_in_results.txt:161:GX010238
+./videos_found_in_results.txt:162:GX010239
+./videos_found_in_results.txt:163:GX010240
+./videos_found_in_results.txt:164:GX010241
+./videos_found_in_results.txt:165:GX010242
+./videos_found_in_results.txt:166:GX010243
+./videos_found_in_results.txt:167:GX010244
+./videos_found_in_results.txt:168:GX010245
+./videos_found_in_results.txt:169:GX010246
+./videos_found_in_results.txt:170:GX010247
+./videos_found_in_results.txt:171:GX010248
+./videos_found_in_results.txt:172:GX010249
+./videos_found_in_results.txt:173:GX010250
+./videos_found_in_results.txt:174:GX010251
+./videos_found_in_results.txt:175:GX010252
+./videos_found_in_results.txt:176:GX010253
+./videos_found_in_results.txt:177:GX010254
+./videos_found_in_results.txt:178:GX010255
+./videos_found_in_results.txt:179:GX010256
+./videos_found_in_results.txt:180:GX010257
+./videos_found_in_results.txt:181:GX010258
+./videos_found_in_results.txt:182:GX010259
+./videos_found_in_results.txt:183:GX010260
+./videos_found_in_results.txt:184:GX010261
+./videos_found_in_results.txt:185:GX010262
+./videos_found_in_results.txt:186:GX010263
+./videos_found_in_results.txt:187:GX010264
+./videos_found_in_results.txt:188:GX010265
+./videos_found_in_results.txt:189:GX010266
+./videos_found_in_results.txt:190:GX010267
+./videos_found_in_results.txt:191:GX010268
+./videos_found_in_results.txt:192:GX010269
+./videos_found_in_results.txt:193:GX010270
+./videos_found_in_results.txt:194:GX010271
+./videos_found_in_results.txt:195:GX010272
+./videos_found_in_results.txt:196:GX010273
+./videos_found_in_results.txt:197:GX010274
+./videos_found_in_results.txt:198:GX010275
+./videos_found_in_results.txt:199:GX010276
+./videos_found_in_results.txt:200:GX010277
+./videos_found_in_results.txt:201:GX010278
+./videos_found_in_results.txt:202:GX010279
+./videos_found_in_results.txt:203:GX010280
+./videos_found_in_results.txt:204:GX010281
+./videos_found_in_results.txt:205:GX010282
+./videos_found_in_results.txt:206:GX010283
+./videos_found_in_results.txt:207:GX010284
+./videos_found_in_results.txt:208:GX010285
+./videos_found_in_results.txt:209:GX010286
+./videos_found_in_results.txt:210:GX010287
+./videos_found_in_results.txt:211:GX010288
+./videos_found_in_results.txt:212:GX010289
+./videos_found_in_results.txt:213:GX010290
+./videos_found_in_results.txt:214:GX010291
+./videos_found_in_results.txt:215:GX010292
+./videos_found_in_results.txt:216:GX010293
+./videos_found_in_results.txt:217:GX010294
+./videos_found_in_results.txt:218:GX010295
+./videos_found_in_results.txt:219:GX010296
+./videos_found_in_results.txt:220:GX010297
+./videos_found_in_results.txt:221:GX010298
+./videos_found_in_results.txt:222:GX010299
+./videos_found_in_results.txt:223:GX010300
+./videos_found_in_results.txt:224:GX010301
+./videos_found_in_results.txt:225:GX010302
+./videos_found_in_results.txt:226:GX010303
+./videos_found_in_results.txt:227:GX010304
+./videos_found_in_results.txt:228:GX020055
+./videos_found_in_results.txt:229:GX020097
+./videos_found_in_results.txt:230:GX020098
+./videos_found_in_results.txt:231:GX020108
+./videos_found_in_results.txt:232:GX020117
+./videos_found_in_results.txt:233:GX020129
+./videos_found_in_results.txt:234:GX020160
+./videos_found_in_results.txt:235:GX020164
+./videos_found_in_results.txt:236:GX020175
+./videos_found_in_results.txt:237:GX020235
+./videos_found_in_results.txt:238:GX020238
+./videos_found_in_results.txt:239:GX020242
+./videos_found_in_results.txt:240:GX020243
+./videos_found_in_results.txt:241:GX020246
+./videos_found_in_results.txt:242:GX020248
+./videos_found_in_results.txt:243:GX020250
+./videos_found_in_results.txt:244:GX020253
+./videos_found_in_results.txt:245:GX020254
+./videos_found_in_results.txt:246:GX030098
+./videos_found_in_results.txt:247:GX030129
+./videos_found_in_results.txt:248:GX030160
+./videos_found_in_results.txt:249:GX030238
+./videos_found_in_results.txt:250:GX030242
+./videos_found_in_results.txt:251:GX030246
+./videos_found_in_results.txt:252:GX030250
+./videos_found_in_results.txt:253:GX030254
+./videos_found_in_results.txt:254:GX040098
+./videos_found_in_results.txt:255:GX040129
+./videos_found_in_results.txt:256:GX040160
+./videos_found_in_results.txt:257:GX040238
+./videos_found_in_results.txt:258:GX040246
+./videos_found_in_results.txt:259:GX040250
+./videos_found_in_results.txt:260:GX040254
+./videos_found_in_results.txt:261:GX050098
+./videos_found_in_results.txt:262:GX050129
+./videos_found_in_results.txt:263:GX050160
+./videos_found_in_results.txt:264:GX050238
+./videos_found_in_results.txt:265:GX050246
+./videos_found_in_results.txt:266:GX050250
+./videos_found_in_results.txt:267:GX060098
+./videos_found_in_results.txt:268:GX060129
+./videos_found_in_results.txt:269:GX060246
+./videos_found_in_results.txt:270:GX060250
+./videos_found_in_results.txt:271:GX070098
+./videos_found_in_results.txt:272:GX070129
+./videos_found_in_results.txt:273:GX070250
+./videos_found_in_results.txt:274:GX080129
+./videos_found_in_results.txt:275:GX080250
+./videos_found_in_results.txt:276:GX090129
+./videos_found_in_results.txt:277:GX090250
+./videos_found_in_results.txt:278:GX100129
+./videos_found_in_results.txt:279:GX100250
+./videos_found_in_results.txt:280:GX110129

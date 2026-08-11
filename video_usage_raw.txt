@@ -1,0 +1,14 @@
+src/create_lk_validation_timeseries.py:28:    --input-csv /pfad/GX010262_lucas_kanade.csv \
+src/create_lk_validation_timeseries.py:29:    --output-csv /pfad/GX010262_lucas_kanade_timeseries.csv
+src/create_lk_validation_timeseries.py:54:    DEFAULT_OUTPUT_DIRECTORY / "GX010262_lucas_kanade.csv"
+src/create_lk_validation_timeseries.py:58:    DEFAULT_OUTPUT_DIRECTORY / "GX010262_lucas_kanade_timeseries.csv"
+src/create_lk_validation_timeseries.py:63:    / "GX010262_lucas_kanade_timeseries_summary.json"
+src/create_lk_video_acceleration.py:13:    "GX010262_lucas_kanade.csv"
+src/create_lk_video_acceleration.py:19:    "GX010262_lk_video_acceleration_m_s2.csv.csv"
+src/validate_inner_pipe_signal.py:299:    plt.title("GX010044 - Inner pipe tracking signal")
+src/validate_video_signals_automatic.py:11:      --video-csv outputs/Lucas_Kanade_CPU7/GX010049_results_inner_pipe_track_timeseries.csv \
+src/validate_video_signals_automatic.py:13:      --output-dir outputs/signal_validation/GX010049 \
+src/validate_video_signals_automatic.py:14:      --video-id GX010049 \
+src/validate_video_vs_imu_v2.py:33:    --video-csv outputs/GX010044_results_inner_pipe_track_timeseries.csv \
+src/validate_video_vs_imu_v2.py:39:    --output-dir outputs/validation/GX010044
+extract_iou_frames_gx010044.py:4:video_path = "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4"
