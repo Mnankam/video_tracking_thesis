@@ -1,0 +1,172 @@
+# =============================================================================
+# Internal Validation Configuration
+# Video: GX010129.MP4
+# Recording date: 2022-04-04
+# Purpose:
+#   Internal validation of segmentation, tracking, particle-bed detection,
+#   bed-edge estimation and Lucas-Kanade optical flow.
+# =============================================================================
+
+
+# =============================================================================
+# Input / Output
+# =============================================================================
+
+video_path: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/GX010129.MP4
+
+output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/GX010129_results.csv
+
+summary_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/GX010129_summary.csv
+
+optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/GX010129_lucas_kanade.csv
+
+debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/debug
+
+
+# =============================================================================
+# Frame range
+# =============================================================================
+
+start_frame: 0
+end_frame: 110000
+
+
+# =============================================================================
+# Image size
+# =============================================================================
+
+resize_width: 1280
+resize_height: 720
+
+
+# =============================================================================
+# Processing modules
+# =============================================================================
+
+enable_deflicker: true
+enable_tracking: true
+enable_bed_edge: true
+enable_inner_pipe: true
+
+# Important:
+# The pipeline configuration contains the optical-flow parameters,
+# but Lucas-Kanade should preferably be executed separately using
+# src.optical_flow_test.py to avoid duplicate processing.
+enable_optical_flow: true
+
+enable_optical_box: false
+
+
+# =============================================================================
+# Debug output
+# =============================================================================
+
+save_debug_frames: true
+
+
+# =============================================================================
+# Segmentation
+# =============================================================================
+
+segmentation_mode: bed_cv
+segmentation_color_mode: hsv_v
+
+device: cpu
+
+
+# =============================================================================
+# Lucas-Kanade Optical Flow
+# =============================================================================
+#
+# Initial values taken from the previously validated camera geometry.
+# These points MUST be checked using the generated initial-points image
+# for GX010129 before the final quantitative evaluation.
+#
+# Points 0--2:
+#   inner-pipe / reflection structure
+#
+# Points 3--5:
+#   particle-bed / upper bed-edge structure
+# =============================================================================
+
+optical_flow_points:
+
+  # Inner-pipe / reflection structure
+  - [500, 315]
+  - [600, 315]
+  - [700, 315]
+
+  # Particle-bed / bed-edge structure
+  - [800, 310]
+  - [950, 310]
+  - [1100, 310]
+
+optical_flow_snap_radius: 25
+
+optical_flow_max_jump_px: 5.0
+
+optical_flow_max_fb_error: 2.0
+
+optical_flow_use_blur: true
+optical_flow_use_equalize: true
+
+
+# =============================================================================
+# ROI definitions
+# =============================================================================
+#
+# Initial ROI values transferred from the previous configuration.
+# They must be visually checked for GX010129.
+#
+# Format:
+# [x, y, width, height]
+# =============================================================================
+
+inner_pipe_roi: [470, 345, 260, 60]
+
+bed_roi: [755, 370, 430, 70]
+
+bed_edge_roi: [755, 360, 430, 35]
+
+optical_box_roi: [450, 250, 760, 190]
+
+
+# =============================================================================
+# Particle-bed edge
+# =============================================================================
+
+bed_edge_color_mode: hsv_v
+
+bed_edge_smoothing: true
+
+bed_edge_median_window: 7
+
+bed_edge_ema_alpha: 0.2
+
+
+# =============================================================================
+# Result generation
+# =============================================================================
+
+save_summary: true
+
+
+# =============================================================================
+# Deflicker
+# =============================================================================
+
+deflicker_fps: 200.0
+
+deflicker_freq: 50.0
+
+deflicker_use_second_harmonic: true
+
+deflicker_window_size: 256
+
+deflicker_min_history: 32
+
+deflicker_smooth_alpha: 0.2
+
+deflicker_use_median: true
+
+deflicker_roi: null
