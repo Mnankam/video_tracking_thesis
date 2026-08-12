@@ -21,6 +21,7 @@ summary_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/
 optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/GX010129_lucas_kanade.csv
 
 debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/debug
+binary_mask_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/Internal_Validation_GX010129/masks
 
 
 # =============================================================================
@@ -62,6 +63,7 @@ enable_optical_box: false
 # =============================================================================
 
 save_debug_frames: true
+save_binary_masks: true
 
 
 # =============================================================================
