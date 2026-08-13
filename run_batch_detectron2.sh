@@ -1,4 +1,14 @@
 #!/bin/bash
+#SBATCH --job-name=detectron2_baseline
+#SBATCH --partition=scc-gpu        
+#SBATCH --gres=gpu:A100:1          
+#SBATCH --time=12:00:00            
+#SBATCH --mem=64G                  
+#SBATCH --cpus-per-task=8
+#SBATCH --output=logs/detectron2_%j.out
+#SBATCH --error=logs/detectron2_%j.err
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=serge.nankam@stud.hawk.de
 set -euo pipefail
 # =========================================================
 # OpenCV / FFmpeg video decoding configuration
@@ -11,7 +21,7 @@ CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/co
 PROJECT="$HOME/projects/video_tracking_thesis"
 DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation"
 
-EXPERIMENT_NAME="Detectron2_GPU_Baseline2"
+EXPERIMENT_NAME="Detectron2_GPU_Baseline3"
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
 mkdir -p "$OUT/logs" "$OUT/configs"

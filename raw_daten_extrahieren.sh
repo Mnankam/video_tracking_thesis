@@ -1,4 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash
+#SBATCH --job-name=video_metadata
+#SBATCH --partition=scc-cpu        
+#SBATCH --time=02:00:00            
+#SBATCH --mem=8G
+#SBATCH --cpus-per-task=4
+#SBATCH --output=logs/metadata_%j.out
+#SBATCH --error=logs/metadata_%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=serge.nankam@stud.hawk.de
 
 set -u
 

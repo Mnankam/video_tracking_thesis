@@ -1,4 +1,13 @@
 #!/bin/bash
+#SBATCH --job-name=sort_videos
+#SBATCH --partition=scc-cpu        
+#SBATCH --time=01:00:00            
+#SBATCH --mem=4G                   
+#SBATCH --cpus-per-task=2          
+#SBATCH --output=logs/sort_%j.out
+#SBATCH --error=logs/sort_%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=serge.nankam@stud.hawk.de
 
 SRC="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side"
 DST="/scratch-scc/projects/mthesis_s_kouomnankam/video_tracking_thesis/data"

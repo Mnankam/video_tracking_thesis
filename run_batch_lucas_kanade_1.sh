@@ -1,4 +1,14 @@
-#!/usr/bin/env bash
+#!/bin/bash
+#SBATCH --job-name=internal_validation
+#SBATCH --partition=scc-gpu        
+#SBATCH --gres=gpu:A100:1
+#SBATCH --time=16:00:00            
+#SBATCH --mem=64G
+#SBATCH --cpus-per-task=8
+#SBATCH --output=logs/internal_val_%j.out
+#SBATCH --error=logs/internal_val_%j.err
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=serge.nankam@stud.hawk.de
 
 set -euo pipefail
 
@@ -86,6 +96,7 @@ require_dir()
 run_apptainer()
 {
     apptainer exec \
+        --nv \               
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
         -B "${PROJECT}:${PROJECT}" \
         "${CONTAINER}" \

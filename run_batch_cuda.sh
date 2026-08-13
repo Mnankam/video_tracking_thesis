@@ -1,4 +1,14 @@
 #!/bin/bash
+#SBATCH --job-name=cuda_flow_gpu1
+#SBATCH --partition=scc-gpu        
+#SBATCH --gres=gpu:A100:1
+#SBATCH --time=08:00:00            
+#SBATCH --mem=64G
+#SBATCH --cpus-per-task=8
+#SBATCH --output=logs/cuda_flow_%j.out
+#SBATCH --error=logs/cuda_flow_%j.err
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=serge.nankam@stud.hawk.de
 set -euo pipefail
 
 CONTAINER="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/containers/detectron2.sif"
