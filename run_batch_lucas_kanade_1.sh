@@ -96,13 +96,11 @@ require_dir()
 run_apptainer()
 {
     apptainer exec \
-        --nv \               
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
         -B "${PROJECT}:${PROJECT}" \
         "${CONTAINER}" \
         "$@"
 }
-
 
 check_output_collision()
 {
