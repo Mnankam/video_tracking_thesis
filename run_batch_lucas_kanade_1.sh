@@ -31,7 +31,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Va
 
 BASE_CONFIG="${PROJECT}/configs/config.yaml"
 
-EXPERIMENT_NAME="Lresults_internal_validierung"
+EXPERIMENT_NAME="results_internal_validierung"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/${EXPERIMENT_NAME}"
 
