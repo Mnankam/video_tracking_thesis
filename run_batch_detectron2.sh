@@ -121,7 +121,7 @@ for video in "$DATA"/*.MP4; do
             --csv "$DETECTRON2_OUT" \
             --out "$DETECTRON2_ANIMATION" \
             --start-frame 1 \
-            --end-frame 300 \
+            --end-frame 110000 \
             --draw-reference-rois \
         > "$OUT/logs/${name}_detectron2_animation.log" 2>&1; then
 
