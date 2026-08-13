@@ -1,0 +1,40 @@
+======================================
+Processing: GX010129
+Experiment: Detectron2_GPU_Baseline3
+Video: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/GX010129.MP4
+======================================
+Running Detectron2 inference...
+Detectron2 finished: GX010129
+Running Detectron2 plots...
+Detectron2 plots finished: GX010129
+Running Detectron2 analysis...
+Detectron2 analysis finished: GX010129
+Running Detectron2 animation...
+Detectron2 animation finished: GX010129
+Done: GX010129
+======================================
+Processing: GX010262
+Experiment: Detectron2_GPU_Baseline3
+Video: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/GX010262.MP4
+======================================
+Running Detectron2 inference...
+Detectron2 finished: GX010262
+Running Detectron2 plots...
+Detectron2 plots finished: GX010262
+Running Detectron2 analysis...
+Detectron2 analysis finished: GX010262
+Running Detectron2 animation...
+Detectron2 animation finished: GX010262
+Done: GX010262
+======================================
+All Detectron2 videos processed.
+Experiment: Detectron2_GPU_Baseline3
+======================================
+============ Job Information ===================================================
+Submitted: 2026-08-13T14:13:49
+Started: 2026-08-13T14:24:21
+Ended: 2026-08-13T14:28:44
+Elapsed: 5 min, Limit: 720 min, Difference: 715 min
+CPUs: 8, Nodes: 1
+Estimated credit Consumption: 12.50 core-hours
+================================================================================

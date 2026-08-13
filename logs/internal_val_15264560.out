@@ -1,0 +1,22 @@
+2026-08-13 14:31:05 | Projekt: /user/s.kouomnankam/u26502/projects/video_tracking_thesis
+2026-08-13 14:31:05 | Daten: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation
+2026-08-13 14:31:05 | Experiment: results_internal_validierung
+2026-08-13 14:31:05 | Ausgabe: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/results_internal_validierung
+2026-08-13 14:31:05 | Anzahl Videos: 2
+2026-08-13 14:31:05 | =========================================================
+2026-08-13 14:31:05 | Verarbeite Video: GX010129
+2026-08-13 14:31:05 | Video-Datei: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/GX010129.MP4
+2026-08-13 14:31:05 | =========================================================
+Config geprüft: config_GX010129_pipeline.yaml | video=GX010129.MP4 | enable_optical_flow=False | num_points=6
+Config geprüft: config_GX010129_lk.yaml | video=GX010129.MP4 | enable_optical_flow=True | num_points=6
+2026-08-13 14:31:05 | Pipeline wird ausgeführt.
+2026-08-13 14:31:05 | Pipeline fehlgeschlagen: GX010129
+2026-08-13 14:31:05 | Logdatei: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Validation/results_internal_validierung/logs/GX010129_pipeline.log
+============ Job Information ===================================================
+Submitted: 2026-08-13T14:16:34
+Started: 2026-08-13T14:30:41
+Ended: 2026-08-13T14:31:06
+Elapsed: 1 min, Limit: 960 min, Difference: 959 min
+CPUs: 8, Nodes: 1
+Estimated credit Consumption: 2.50 core-hours
+================================================================================
