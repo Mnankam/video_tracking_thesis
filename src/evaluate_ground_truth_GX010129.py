@@ -19,44 +19,6 @@ The existing repository functions
     src.evaluation.compute_dice()
 
 are reused for the actual segmentation metrics.
-
-Expected input structure
-------------------------
-
-data_gt/
-└── ground_truth/
-    └── GX010129/
-        ├── ground_truth/
-        │   ├── inner_pipe/
-        │   │   ├── frame_000000_inner_pipe_gt.png
-        │   │   └── ...
-        │   └── particle_bed/
-        │       ├── frame_000000_particle_bed_gt.png
-        │       └── ...
-        └── predictions/
-            ├── inner_pipe/
-            │   ├── frame_000000_inner_pipe.png
-            │   └── ...
-            └── particle_bed/
-                ├── frame_000000_particle_bed.png
-                └── ...
-
-Output structure
-----------------
-
-results/internal_validation/GX010129/
-├── per_frame_metrics.csv
-├── summary_metrics.csv
-├── validation_summary.txt
-├── inner_pipe_iou.png
-├── particle_bed_iou.png
-├── inner_pipe_dice.png
-└── particle_bed_dice.png
-
-Author
-------
-
-Serge Kouomnankam
 """
 
 from __future__ import annotations
@@ -87,11 +49,15 @@ GT_PARTICLE_BED_DIR = GROUND_TRUTH_ROOT / "particle_bed"
 PRED_INNER_PIPE_DIR = PREDICTION_ROOT / "inner_pipe"
 PRED_PARTICLE_BED_DIR = PREDICTION_ROOT / "particle_bed"
 
-OUTPUT_DIR = Path("results/internal_validation/GX010129")
+OUTPUT_DIR = Path(
+    "results/internal_validation/GX010129"
+)
 
 PER_FRAME_CSV = OUTPUT_DIR / "per_frame_metrics.csv"
 SUMMARY_CSV = OUTPUT_DIR / "summary_metrics.csv"
 SUMMARY_TXT = OUTPUT_DIR / "validation_summary.txt"
+
+OVERLAY_DIR = OUTPUT_DIR / "overlays"
 
 
 # =============================================================================
@@ -119,8 +85,14 @@ CLASS_CONFIG = {
 # =============================================================================
 
 def ensure_output_directory() -> None:
-    """Create the evaluation output directory."""
+    """Create all required output directories."""
+
     OUTPUT_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    OVERLAY_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -220,9 +192,9 @@ def frame_number_from_name(frame_name: str) -> int:
 def compute_pixel_statistics(
     gt_mask: np.ndarray,
     prediction_mask: np.ndarray,
-) -> dict[str, int]:
+) -> dict[str, float]:
     """
-    Calculate foreground, intersection, and union pixel counts.
+    Calculate foreground, intersection, union, ratio, and coverage values.
     """
 
     gt_bool = gt_mask.astype(bool)
@@ -238,20 +210,120 @@ def compute_pixel_statistics(
         prediction_bool,
     )
 
+    gt_pixels = int(
+        np.count_nonzero(gt_bool)
+    )
+
+    prediction_pixels = int(
+        np.count_nonzero(prediction_bool)
+    )
+
+    intersection_pixels = int(
+        np.count_nonzero(intersection)
+    )
+
+    union_pixels = int(
+        np.count_nonzero(union)
+    )
+
+    prediction_gt_ratio = (
+        prediction_pixels / gt_pixels
+        if gt_pixels > 0
+        else np.nan
+    )
+
+    gt_coverage = (
+        intersection_pixels / gt_pixels
+        if gt_pixels > 0
+        else np.nan
+    )
+
     return {
-        "gt_pixels": int(
-            np.count_nonzero(gt_bool)
-        ),
-        "prediction_pixels": int(
-            np.count_nonzero(prediction_bool)
-        ),
-        "intersection_pixels": int(
-            np.count_nonzero(intersection)
-        ),
-        "union_pixels": int(
-            np.count_nonzero(union)
-        ),
+        "gt_pixels": gt_pixels,
+        "prediction_pixels": prediction_pixels,
+        "intersection_pixels": intersection_pixels,
+        "union_pixels": union_pixels,
+        "prediction_gt_ratio": prediction_gt_ratio,
+        "gt_coverage": gt_coverage,
     }
+
+
+def save_segmentation_overlay(
+    gt_mask: np.ndarray,
+    prediction_mask: np.ndarray,
+    output_path: Path,
+) -> None:
+    """
+    Save a qualitative segmentation comparison.
+
+    Colors:
+        Green = true positive
+        Red   = false negative
+        Blue  = false positive
+        Black = true negative
+    """
+
+    gt = gt_mask > 0
+    prediction = prediction_mask > 0
+
+    true_positive = np.logical_and(
+        gt,
+        prediction,
+    )
+
+    false_negative = np.logical_and(
+        gt,
+        np.logical_not(prediction),
+    )
+
+    false_positive = np.logical_and(
+        np.logical_not(gt),
+        prediction,
+    )
+
+    overlay = np.zeros(
+        (
+            gt.shape[0],
+            gt.shape[1],
+            3,
+        ),
+        dtype=np.uint8,
+    )
+
+    # OpenCV uses BGR channel order.
+    overlay[true_positive] = (
+        0,
+        255,
+        0,
+    )
+
+    overlay[false_negative] = (
+        0,
+        0,
+        255,
+    )
+
+    overlay[false_positive] = (
+        255,
+        0,
+        0,
+    )
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    success = cv2.imwrite(
+        str(output_path),
+        overlay,
+    )
+
+    if not success:
+        raise RuntimeError(
+            f"Could not write overlay image:\n"
+            f"{output_path}"
+        )
 
 
 # =============================================================================
@@ -267,15 +339,22 @@ def evaluate_class(
     """
 
     gt_dir = Path(config["gt_dir"])
-    prediction_dir = Path(config["prediction_dir"])
+    prediction_dir = Path(
+        config["prediction_dir"]
+    )
 
-    gt_suffix = str(config["gt_suffix"])
+    gt_suffix = str(
+        config["gt_suffix"]
+    )
+
     prediction_suffix = str(
         config["prediction_suffix"]
     )
 
     gt_files = sorted(
-        gt_dir.glob(f"*{gt_suffix}")
+        gt_dir.glob(
+            f"*{gt_suffix}"
+        )
     )
 
     if not gt_files:
@@ -286,7 +365,9 @@ def evaluate_class(
 
     print()
     print("=" * 80)
-    print(f"Evaluating class: {class_name}")
+    print(
+        f"Evaluating class: {class_name}"
+    )
     print("=" * 80)
 
     rows: list[dict[str, Any]] = []
@@ -304,8 +385,9 @@ def evaluate_class(
             frame_name
         )
 
-        prediction_path = prediction_dir / (
-            f"{frame_name}{prediction_suffix}"
+        prediction_path = (
+            prediction_dir
+            / f"{frame_name}{prediction_suffix}"
         )
 
         if not prediction_path.is_file():
@@ -326,12 +408,17 @@ def evaluate_class(
                     "prediction_pixels": np.nan,
                     "intersection_pixels": np.nan,
                     "union_pixels": np.nan,
+                    "prediction_gt_ratio": np.nan,
+                    "gt_coverage": np.nan,
                 }
             )
 
             continue
 
-        gt_mask = load_binary_mask(gt_path)
+        gt_mask = load_binary_mask(
+            gt_path
+        )
+
         prediction_mask = load_binary_mask(
             prediction_path
         )
@@ -374,6 +461,11 @@ def evaluate_class(
                 0,
             ).astype(np.uint8)
 
+        pixel_stats = compute_pixel_statistics(
+            gt_mask,
+            prediction_mask,
+        )
+
         iou = compute_iou(
             gt_mask,
             prediction_mask,
@@ -384,9 +476,16 @@ def evaluate_class(
             prediction_mask,
         )
 
-        pixel_stats = compute_pixel_statistics(
-            gt_mask,
-            prediction_mask,
+        overlay_path = (
+            OVERLAY_DIR
+            / class_name
+            / f"{frame_name}_overlay.png"
+        )
+
+        save_segmentation_overlay(
+            gt_mask=gt_mask,
+            prediction_mask=prediction_mask,
+            output_path=overlay_path,
         )
 
         row = {
@@ -407,7 +506,9 @@ def evaluate_class(
             f"IoU={iou:.6f} | "
             f"Dice={dice:.6f} | "
             f"GT={pixel_stats['gt_pixels']} px | "
-            f"Pred={pixel_stats['prediction_pixels']} px"
+            f"Pred={pixel_stats['prediction_pixels']} px | "
+            f"Ratio={pixel_stats['prediction_gt_ratio']:.4f} | "
+            f"Coverage={pixel_stats['gt_coverage']:.4f}"
         )
 
     return rows
@@ -463,6 +564,16 @@ def summarize_metrics(
             errors="coerce",
         ).dropna()
 
+        prediction_gt_ratio = pd.to_numeric(
+            subset["prediction_gt_ratio"],
+            errors="coerce",
+        ).dropna()
+
+        gt_coverage = pd.to_numeric(
+            subset["gt_coverage"],
+            errors="coerce",
+        ).dropna()
+
         row = {
             "class": class_name,
             "num_frames": int(len(subset)),
@@ -476,9 +587,17 @@ def summarize_metrics(
             "std_dice": float(dice.std(ddof=0)),
             "min_dice": float(dice.min()),
             "max_dice": float(dice.max()),
-            "mean_gt_pixels": float(gt_pixels.mean()),
+            "mean_gt_pixels": float(
+                gt_pixels.mean()
+            ),
             "mean_prediction_pixels": float(
                 prediction_pixels.mean()
+            ),
+            "mean_prediction_gt_ratio": float(
+                prediction_gt_ratio.mean()
+            ),
+            "mean_gt_coverage": float(
+                gt_coverage.mean()
             ),
         }
 
@@ -508,7 +627,9 @@ def plot_metric(
         )
     ].copy()
 
-    subset = subset.sort_values("frame")
+    subset = subset.sort_values(
+        "frame"
+    )
 
     if subset.empty:
         return
@@ -523,7 +644,10 @@ def plot_metric(
         errors="coerce",
     )
 
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(
+        figsize=(10, 5)
+    )
+
     axis = fig.add_subplot(111)
 
     axis.plot(
@@ -538,17 +662,30 @@ def plot_metric(
         label=f"Mean = {y.mean():.4f}",
     )
 
-    axis.set_xlabel("Video frame")
-    axis.set_ylabel(metric.upper())
+    axis.set_xlabel(
+        "Video frame"
+    )
+
+    axis.set_ylabel(
+        metric.upper()
+    )
 
     axis.set_title(
-        f"GX010129 – "
+        f"GX010129 - "
         f"{class_name.replace('_', ' ')} "
         f"{metric.upper()}"
     )
 
-    axis.set_ylim(0.0, 1.05)
-    axis.grid(True, alpha=0.3)
+    axis.set_ylim(
+        0.0,
+        1.05,
+    )
+
+    axis.grid(
+        True,
+        alpha=0.3,
+    )
+
     axis.legend()
 
     fig.tight_layout()
@@ -562,7 +699,9 @@ def plot_metric(
     plt.close(fig)
 
 
-def create_plots(frame: pd.DataFrame) -> None:
+def create_plots(
+    frame: pd.DataFrame,
+) -> None:
     """Generate IoU and Dice plots for both classes."""
 
     for class_name in CLASS_CONFIG:
@@ -570,14 +709,16 @@ def create_plots(frame: pd.DataFrame) -> None:
             frame,
             class_name,
             "iou",
-            OUTPUT_DIR / f"{class_name}_iou.png",
+            OUTPUT_DIR
+            / f"{class_name}_iou.png",
         )
 
         plot_metric(
             frame,
             class_name,
             "dice",
-            OUTPUT_DIR / f"{class_name}_dice.png",
+            OUTPUT_DIR
+            / f"{class_name}_dice.png",
         )
 
 
@@ -598,37 +739,47 @@ def save_text_summary(
         "  IoU  = intersection / union",
         "  Dice = 2 * intersection / "
         "(GT + prediction)",
+        "  Prediction/GT ratio = prediction pixels "
+        "/ GT pixels",
+        "  GT coverage = intersection pixels "
+        "/ GT pixels",
         "",
     ]
 
     for _, row in summary.iterrows():
-        class_name = str(row["class"])
+        class_name = str(
+            row["class"]
+        )
 
         lines.extend(
             [
                 f"Class: {class_name}",
-                f"  Frames:              "
+                f"  Frames:                 "
                 f"{int(row['num_frames'])}",
-                f"  Mean IoU:            "
+                f"  Mean IoU:               "
                 f"{row['mean_iou']:.6f}",
-                f"  Median IoU:          "
+                f"  Median IoU:             "
                 f"{row['median_iou']:.6f}",
-                f"  Std IoU:             "
+                f"  Std IoU:                "
                 f"{row['std_iou']:.6f}",
-                f"  Min IoU:             "
+                f"  Min IoU:                "
                 f"{row['min_iou']:.6f}",
-                f"  Max IoU:             "
+                f"  Max IoU:                "
                 f"{row['max_iou']:.6f}",
-                f"  Mean Dice:           "
+                f"  Mean Dice:              "
                 f"{row['mean_dice']:.6f}",
-                f"  Median Dice:         "
+                f"  Median Dice:            "
                 f"{row['median_dice']:.6f}",
-                f"  Std Dice:            "
+                f"  Std Dice:               "
                 f"{row['std_dice']:.6f}",
-                f"  Min Dice:            "
+                f"  Min Dice:               "
                 f"{row['min_dice']:.6f}",
-                f"  Max Dice:            "
+                f"  Max Dice:               "
                 f"{row['max_dice']:.6f}",
+                f"  Mean prediction/GT:     "
+                f"{row['mean_prediction_gt_ratio']:.6f}",
+                f"  Mean GT coverage:       "
+                f"{row['mean_gt_coverage']:.6f}",
                 "",
             ]
         )
@@ -658,55 +809,80 @@ def print_summary(
 
     for _, row in summary.iterrows():
         print()
-        print(f"Class: {row['class']}")
         print(
-            f"Frames:       "
+            f"Class: {row['class']}"
+        )
+
+        print(
+            f"Frames:                "
             f"{int(row['num_frames'])}"
         )
+
         print(
-            f"Mean IoU:     "
+            f"Mean IoU:              "
             f"{row['mean_iou']:.6f}"
         )
+
         print(
-            f"Median IoU:   "
+            f"Median IoU:            "
             f"{row['median_iou']:.6f}"
         )
+
         print(
-            f"Std IoU:      "
+            f"Std IoU:               "
             f"{row['std_iou']:.6f}"
         )
+
         print(
-            f"Min IoU:      "
+            f"Min IoU:               "
             f"{row['min_iou']:.6f}"
         )
+
         print(
-            f"Max IoU:      "
+            f"Max IoU:               "
             f"{row['max_iou']:.6f}"
         )
+
         print(
-            f"Mean Dice:    "
+            f"Mean Dice:             "
             f"{row['mean_dice']:.6f}"
         )
+
         print(
-            f"Median Dice:  "
+            f"Median Dice:           "
             f"{row['median_dice']:.6f}"
         )
+
         print(
-            f"Std Dice:     "
+            f"Std Dice:              "
             f"{row['std_dice']:.6f}"
         )
+
         print(
-            f"Min Dice:     "
+            f"Min Dice:              "
             f"{row['min_dice']:.6f}"
         )
+
         print(
-            f"Max Dice:     "
+            f"Max Dice:              "
             f"{row['max_dice']:.6f}"
+        )
+
+        print(
+            f"Mean prediction/GT:    "
+            f"{row['mean_prediction_gt_ratio']:.6f}"
+        )
+
+        print(
+            f"Mean GT coverage:      "
+            f"{row['mean_gt_coverage']:.6f}"
         )
 
     print()
     print("Output directory:")
-    print(f"  {OUTPUT_DIR}")
+    print(
+        f"  {OUTPUT_DIR}"
+    )
 
 
 # =============================================================================
@@ -729,30 +905,49 @@ def main() -> None:
 
         all_rows.extend(class_rows)
 
-    per_frame = pd.DataFrame(all_rows)
+    if not all_rows:
+        raise RuntimeError(
+            "No evaluation rows were generated."
+        )
+
+    per_frame = pd.DataFrame(
+        all_rows
+    )
 
     per_frame = per_frame.sort_values(
         [
             "class",
             "frame",
         ]
-    ).reset_index(drop=True)
+    ).reset_index(
+        drop=True
+    )
 
     per_frame.to_csv(
         PER_FRAME_CSV,
         index=False,
     )
 
-    summary = summarize_metrics(per_frame)
+    summary = summarize_metrics(
+        per_frame
+    )
 
     summary.to_csv(
         SUMMARY_CSV,
         index=False,
     )
 
-    create_plots(per_frame)
-    save_text_summary(summary)
-    print_summary(summary)
+    create_plots(
+        per_frame
+    )
+
+    save_text_summary(
+        summary
+    )
+
+    print_summary(
+        summary
+    )
 
 
 if __name__ == "__main__":
