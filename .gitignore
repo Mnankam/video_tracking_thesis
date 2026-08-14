@@ -31,3 +31,5 @@ results/
 # Logs
 *.logdata/
 ground_truth_masks/
+
+data_gt/
