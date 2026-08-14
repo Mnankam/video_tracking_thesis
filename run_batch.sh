@@ -28,9 +28,9 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/Va
 # Experiment Name
 # =========================================================
 
-EXPERIMENT_NAME="Farneback_Dense_CPU9"
+EXPERIMENT_NAME="Farneback_Dense"
 
-OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
+OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/Internal_Validation_GX010129/${EXPERIMENT_NAME}"
 
 mkdir -p "$OUT/logs" "$OUT/configs"
 
