@@ -26,6 +26,7 @@ def load_imu_signal(
     Parameters
     ----------
     csv_file : str | Path
+        Path to the IMU CSV file.
 
     axis : str
         Example:
@@ -46,7 +47,10 @@ def load_imu_signal(
     if not csv_file.exists():
         raise FileNotFoundError(csv_file)
 
-    df = pd.read_csv(csv_file)
+    df = pd.read_csv(
+        csv_file,
+        sep=r"\s+",
+    )
 
     # ----- time column -----
 
@@ -65,25 +69,31 @@ def load_imu_signal(
             break
 
     if time_column is None:
-
-        time = np.arange(len(df), dtype=float)
-
+        time = np.arange(
+            len(df),
+            dtype=float,
+        )
     else:
-
-        time = df[time_column].to_numpy(dtype=float)
+        time = df[time_column].to_numpy(
+            dtype=float
+        )
 
     # ----- axis -----
 
     if axis not in df.columns:
-
         raise IMULoaderError(
             f"Axis '{axis}' not found.\n"
             f"Available columns:\n{list(df.columns)}"
         )
 
-    signal = df[axis].to_numpy(dtype=float)
+    signal = df[axis].to_numpy(
+        dtype=float
+    )
 
-    mask = np.isfinite(time) & np.isfinite(signal)
+    mask = (
+        np.isfinite(time)
+        & np.isfinite(signal)
+    )
 
     time = time[mask]
     signal = signal[mask]
@@ -96,14 +106,15 @@ def load_imu_signal(
     dt = np.diff(time)
 
     if np.all(dt > 0):
-
-        sampling_rate = float(1.0 / np.median(dt))
-
+        sampling_rate = float(
+            1.0 / np.median(dt)
+        )
     else:
-
         sampling_rate = np.nan
 
-    duration = float(time[-1] - time[0])
+    duration = float(
+        time[-1] - time[0]
+    )
 
     return {
         "time": time,
@@ -116,12 +127,13 @@ def load_imu_signal(
 
 
 if __name__ == "__main__":
-
     import argparse
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("csv")
+    parser.add_argument(
+        "csv"
+    )
 
     parser.add_argument(
         "--axis",
@@ -137,8 +149,19 @@ if __name__ == "__main__":
 
     print("IMU loaded")
     print("----------------------------")
-    print(f"Samples       : {data['num_samples']}")
-    print(f"Duration [s]  : {data['duration']:.3f}")
-    print(f"Sampling Rate : {data['sampling_rate']:.2f} Hz")
-    print(f"Axis          : {data['signal_name']}")
-    
+    print(
+        f"Samples       : "
+        f"{data['num_samples']}"
+    )
+    print(
+        f"Duration [s]  : "
+        f"{data['duration']:.3f}"
+    )
+    print(
+        f"Sampling Rate : "
+        f"{data['sampling_rate']:.2f} Hz"
+    )
+    print(
+        f"Axis          : "
+        f"{data['signal_name']}"
+    )
