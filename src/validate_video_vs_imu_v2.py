@@ -1480,6 +1480,7 @@ def validate_video_vs_imu(
         "metrics": "validation.metrics",
         "plotting": "validation.plotting",
         "report": "validation.report",
+        
     }
 
     modules = {
