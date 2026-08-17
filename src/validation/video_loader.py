@@ -53,10 +53,13 @@ def load_video_signal(
     required = [
         "time_seconds",
         signal_column,
-        "inner_pipe_track_valid",
     ]
 
-    missing = [c for c in required if c not in df.columns]
+    missing = [
+        column
+        for column in required
+        if column not in df.columns
+    ]
 
     if missing:
         raise VideoLoaderError(
@@ -64,15 +67,37 @@ def load_video_signal(
         )
 
     if valid_only:
-        df = df[df["inner_pipe_track_valid"] == 1].copy()
+        if "inner_pipe_track_valid" in df.columns:
+            # Legacy inner-pipe tracking time series.
+            df = df[
+                df["inner_pipe_track_valid"] == 1
+            ].copy()
+
+        elif "valid_point_count" in df.columns:
+            valid_counts = pd.to_numeric(
+                df["valid_point_count"],
+                errors="coerce",
+            )
+
+            df = df[
+                valid_counts.notna()
+                & (valid_counts >= 1)
+            ].copy()
 
     df = df.sort_values("time_seconds")
 
-    time = df["time_seconds"].to_numpy(dtype=float)
+    time = df["time_seconds"].to_numpy(
+        dtype=float
+    )
 
-    signal = df[signal_column].to_numpy(dtype=float)
+    signal = df[signal_column].to_numpy(
+        dtype=float
+    )
 
-    mask = np.isfinite(time) & np.isfinite(signal)
+    mask = (
+        np.isfinite(time)
+        & np.isfinite(signal)
+    )
 
     time = time[mask]
     signal = signal[mask]
@@ -84,9 +109,18 @@ def load_video_signal(
 
     dt = np.diff(time)
 
-    sampling_rate = float(1.0 / np.median(dt))
+    if np.any(dt <= 0):
+        raise VideoLoaderError(
+            "Time values must be strictly increasing."
+        )
 
-    duration = float(time[-1] - time[0])
+    sampling_rate = float(
+        1.0 / np.median(dt)
+    )
+
+    duration = float(
+        time[-1] - time[0]
+    )
 
     return {
         "time": time,
@@ -99,7 +133,6 @@ def load_video_signal(
 
 
 if __name__ == "__main__":
-
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -120,7 +153,17 @@ if __name__ == "__main__":
 
     print("Video loaded")
     print("----------------------------")
-    print(f"Samples       : {data['num_samples']}")
-    print(f"Duration [s]  : {data['duration']:.3f}")
-    print(f"Sampling Rate : {data['sampling_rate']:.2f} Hz")
-    print(f"Signal        : {data['signal_name']}")
+    print(
+        f"Samples       : {data['num_samples']}"
+    )
+    print(
+        f"Duration [s]  : {data['duration']:.3f}"
+    )
+    print(
+        f"Sampling Rate : "
+        f"{data['sampling_rate']:.2f} Hz"
+    )
+    print(
+        f"Signal        : "
+        f"{data['signal_name']}"
+    )
