@@ -1115,20 +1115,145 @@ def synchronize_signals(
             )
 
             if isinstance(result, Mapping):
-                raw_video = (
-                    result.get("video")
-                    or result.get("video_signal")
-                    or result.get("aligned_video")
+                # validation.synchronization.synchronize_signals
+                # returns one common time vector together with the
+                # two synchronized numeric signal arrays.
+
+                if "time" not in result:
+                    raise KeyError(
+                        "Synchronisationsergebnis enthält keine "
+                        "gemeinsame Zeitachse 'time'."
+                    )
+
+                if "video_signal" not in result:
+                    raise KeyError(
+                        "Synchronisationsergebnis enthält kein "
+                        "'video_signal'."
+                    )
+
+                if "imu_signal" not in result:
+                    raise KeyError(
+                        "Synchronisationsergebnis enthält kein "
+                        "'imu_signal'."
+                    )
+
+                sync_time = np.asarray(
+                    result["time"],
+                    dtype=float,
+                ).reshape(-1)
+
+                video_values = np.asarray(
+                    result["video_signal"],
+                    dtype=float,
+                ).reshape(-1)
+
+                imu_values = np.asarray(
+                    result["imu_signal"],
+                    dtype=float,
+                ).reshape(-1)
+
+                if not (
+                    sync_time.size
+                    == video_values.size
+                    == imu_values.size
+                ):
+                    raise ValueError(
+                        "Synchronisierte Zeit-, Video- und IMU-Vektoren "
+                        "besitzen unterschiedliche Längen."
+                    )
+
+                if sync_time.size < 2:
+                    raise ValueError(
+                        "Synchronisation enthält weniger als zwei "
+                        "gemeinsame Abtastwerte."
+                    )
+
+                synchronization_function = (
+                    f"{function.__module__}."
+                    f"{function.__name__}"
                 )
 
-                raw_imu = (
-                    result.get("imu")
-                    or result.get("imu_signal")
-                    or result.get("aligned_imu")
+                aligned_video = SignalData(
+                    time=sync_time,
+                    values=video_values,
+                    name=video.name,
+                    unit=video.unit,
+                    source=video.source,
+                    metadata={
+                        **video.metadata,
+                        "synchronization_function": (
+                            synchronization_function
+                        ),
+                    },
                 )
 
-                metadata = dict(
-                    result.get("metadata", result)
+                aligned_imu = SignalData(
+                    time=sync_time,
+                    values=imu_values,
+                    name=imu.name,
+                    unit=imu.unit,
+                    source=imu.source,
+                    metadata={
+                        **imu.metadata,
+                        "synchronization_function": (
+                            synchronization_function
+                        ),
+                    },
+                )
+
+                lag_samples = int(
+                    result.get(
+                        "lag_samples",
+                        0,
+                    )
+                )
+
+                lag_s = float(
+                    result.get(
+                        "lag_seconds",
+                        lag_samples / sampling_rate,
+                    )
+                )
+
+                correlation_at_lag = (
+                    float(
+                        np.corrcoef(
+                            video_values,
+                            imu_values,
+                        )[0, 1]
+                    )
+                    if (
+                        np.std(video_values)
+                        > np.finfo(float).eps
+                        and np.std(imu_values)
+                        > np.finfo(float).eps
+                    )
+                    else float("nan")
+                )
+
+                metadata = {
+                    "method": config.synchronization_method,
+                    "implementation": (
+                        synchronization_function
+                    ),
+                    "lag_samples": lag_samples,
+                    "lag_s": lag_s,
+                    "correlation_at_lag": correlation_at_lag,
+                    "target_sample_rate_hz": float(
+                        sampling_rate
+                    ),
+                    "aligned_samples": int(
+                        sync_time.size
+                    ),
+                    "overlap_duration_s": float(
+                        sync_time[-1] - sync_time[0]
+                    ),
+                }
+
+                return (
+                    aligned_video,
+                    aligned_imu,
+                    _jsonable(metadata),
                 )
 
             elif (
@@ -1181,7 +1306,8 @@ def synchronize_signals(
             )
 
             metadata["implementation"] = (
-                f"{function.__module__}.{function.__name__}"
+                f"{function.__module__}."
+                f"{function.__name__}"
             )
 
             return (
