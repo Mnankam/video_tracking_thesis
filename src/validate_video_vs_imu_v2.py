@@ -842,7 +842,7 @@ def _internal_preprocess(
     )
 
 
-ddef preprocess_signal(
+def preprocess_signal(
     signal: SignalData,
     *,
     kind: str,
