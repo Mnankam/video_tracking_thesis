@@ -608,23 +608,16 @@ def load_video_signal(
         try:
             result = _call_supported(
                 function,
-
-                # Actual API of validation.video_loader
-                csv_file=config.video_path,
-                signal_column=config.video_value_column,
-                valid_only=True,
-
-                # Compatibility aliases for other loader versions
                 path=config.video_path,
                 video_path=config.video_path,
                 csv_path=config.video_path,
                 file_path=config.video_path,
                 time_column=config.video_time_column,
                 value_column=config.video_value_column,
+                signal_column=config.video_value_column,
                 fps=config.video_fps,
                 sample_rate_hz=config.video_fps,
             )
-
             signal = _coerce_signal(
                 result,
                 name=config.video_name,
@@ -634,27 +627,19 @@ def load_video_signal(
                 value_column=config.video_value_column,
                 sample_rate_hz=config.video_fps,
             )
-
             signal.metadata["loader"] = (
                 f"{function.__module__}.{function.__name__}"
             )
-
             return signal
-
         except Exception as exc:
             if config.strict_modules:
                 raise
-
             LOGGER.warning(
-                "video_loader-Funktion fehlgeschlagen; "
-                "CSV-Fallback wird genutzt: %s",
+                "video_loader-Funktion fehlgeschlagen; CSV-Fallback wird genutzt: %s",
                 exc,
             )
 
-    frame = _read_delimited_file(
-        config.video_path
-    )
-
+    frame = _read_delimited_file(config.video_path)
     signal = _coerce_signal(
         frame,
         name=config.video_name,
@@ -664,12 +649,9 @@ def load_video_signal(
         value_column=config.video_value_column,
         sample_rate_hz=config.video_fps,
     )
-
-    signal.metadata["loader"] = (
-        "internal_csv_fallback"
-    )
-
+    signal.metadata["loader"] = "internal_csv_fallback"
     return signal
+
 
 def load_imu_signal(
     config: ValidationConfig,
@@ -691,12 +673,6 @@ def load_imu_signal(
         try:
             result = _call_supported(
                 function,
-
-                # Actual API of validation.imu_loader
-                csv_file=config.imu_path,
-                axis=config.imu_value_column,
-
-                # Compatibility aliases
                 path=config.imu_path,
                 imu_path=config.imu_path,
                 csv_path=config.imu_path,
@@ -707,7 +683,6 @@ def load_imu_signal(
                 sample_rate_hz=config.imu_sample_rate_hz,
                 frequency_hz=config.imu_sample_rate_hz,
             )
-
             signal = _coerce_signal(
                 result,
                 name=config.imu_name,
@@ -717,27 +692,19 @@ def load_imu_signal(
                 value_column=config.imu_value_column,
                 sample_rate_hz=config.imu_sample_rate_hz,
             )
-
             signal.metadata["loader"] = (
                 f"{function.__module__}.{function.__name__}"
             )
-
             return signal
-
         except Exception as exc:
             if config.strict_modules:
                 raise
-
             LOGGER.warning(
-                "imu_loader-Funktion fehlgeschlagen; "
-                "CSV-Fallback wird genutzt: %s",
+                "imu_loader-Funktion fehlgeschlagen; CSV-Fallback wird genutzt: %s",
                 exc,
             )
 
-    frame = _read_delimited_file(
-        config.imu_path
-    )
-
+    frame = _read_delimited_file(config.imu_path)
     signal = _coerce_signal(
         frame,
         name=config.imu_name,
@@ -747,11 +714,7 @@ def load_imu_signal(
         value_column=config.imu_value_column,
         sample_rate_hz=config.imu_sample_rate_hz,
     )
-
-    signal.metadata["loader"] = (
-        "internal_csv_fallback"
-    )
-
+    signal.metadata["loader"] = "internal_csv_fallback"
     return signal
 
 
@@ -842,7 +805,7 @@ def _internal_preprocess(
     )
 
 
-ddef preprocess_signal(
+def preprocess_signal(
     signal: SignalData,
     *,
     kind: str,
@@ -851,11 +814,7 @@ ddef preprocess_signal(
     config: ValidationConfig,
     module: Any,
 ) -> SignalData:
-    signal = _crop_signal(
-        signal,
-        config.start_time_s,
-        config.end_time_s,
-    )
+    signal = _crop_signal(signal, config.start_time_s, config.end_time_s)
 
     function = _find_callable(
         module,
@@ -872,15 +831,8 @@ ddef preprocess_signal(
         try:
             result = _call_supported(
                 function,
-
-                # Actual API of validation.preprocessing
+                signal=signal,
                 time=signal.time,
-                signal=signal.values,
-                target_fs=config.target_sample_rate_hz,
-                detrend_signal=config.detrend,
-                normalization=config.normalize,
-
-                # Compatibility aliases
                 values=signal.values,
                 data=signal.values,
                 sample_rate_hz=signal.sample_rate_hz,
@@ -889,11 +841,11 @@ ddef preprocess_signal(
                 detrend=config.detrend,
                 center=config.center,
                 normalize=config.normalize,
+                normalization=config.normalize,
                 smoothing_window=config.smoothing_window,
                 lowpass_hz=config.lowpass_hz,
                 highpass_hz=config.highpass_hz,
             )
-
             processed = _coerce_signal(
                 result,
                 name=signal.name,
@@ -903,7 +855,6 @@ ddef preprocess_signal(
                 value_column=None,
                 sample_rate_hz=signal.sample_rate_hz,
             )
-
             processed.metadata = {
                 **signal.metadata,
                 **processed.metadata,
@@ -911,27 +862,21 @@ ddef preprocess_signal(
                     f"{function.__module__}.{function.__name__}"
                 ),
             }
-
             return processed
-
         except Exception as exc:
             if config.strict_modules:
                 raise
-
             LOGGER.warning(
-                "preprocessing.%s für %s fehlgeschlagen; "
-                "Fallback: %s",
+                "preprocessing.%s für %s fehlgeschlagen; Fallback: %s",
                 function.__name__,
                 kind,
                 exc,
             )
 
     return _internal_preprocess(
-        signal,
-        scale=scale,
-        offset=offset,
-        config=config,
+        signal, scale=scale, offset=offset, config=config
     )
+
 
 # =============================================================================
 # Synchronisation
@@ -1080,38 +1025,20 @@ def synchronize_signals(
 
     if function is not None:
         try:
-            sampling_rate = (
-                float(config.target_sample_rate_hz)
-                if config.target_sample_rate_hz is not None
-                else float(
-                    min(
-                        video.sample_rate_hz,
-                        imu.sample_rate_hz,
-                    )
-                )
-            )
-
             result = _call_supported(
                 function,
-
-                # Actual API of validation.synchronization
-                video_time=video.time,
-                video_signal=video.values,
-                imu_time=imu.time,
-                imu_signal=imu.values,
-                sampling_rate=sampling_rate,
-
-                # Compatibility aliases
+                video_signal=video,
+                imu_signal=imu,
                 video=video,
                 imu=imu,
+                video_time=video.time,
                 video_values=video.values,
+                imu_time=imu.time,
                 imu_values=imu.values,
                 method=config.synchronization_method,
                 max_lag_s=config.max_lag_s,
                 manual_lag_s=config.manual_lag_s,
-                target_sample_rate_hz=(
-                    config.target_sample_rate_hz
-                ),
+                target_sample_rate_hz=config.target_sample_rate_hz,
             )
 
             if isinstance(result, Mapping):
@@ -1120,91 +1047,53 @@ def synchronize_signals(
                     or result.get("video_signal")
                     or result.get("aligned_video")
                 )
-
                 raw_imu = (
                     result.get("imu")
                     or result.get("imu_signal")
                     or result.get("aligned_imu")
                 )
-
-                metadata = dict(
-                    result.get("metadata", result)
-                )
-
-            elif (
-                isinstance(result, (tuple, list))
-                and len(result) >= 2
-            ):
-                raw_video = result[0]
-                raw_imu = result[1]
-
+                metadata = dict(result.get("metadata", result))
+            elif isinstance(result, (tuple, list)) and len(result) >= 2:
+                raw_video, raw_imu = result[0], result[1]
                 metadata = (
                     dict(result[2])
-                    if (
-                        len(result) >= 3
-                        and isinstance(result[2], Mapping)
-                    )
+                    if len(result) >= 3 and isinstance(result[2], Mapping)
                     else {}
                 )
-
             else:
-                raise TypeError(
-                    "Unbekanntes Synchronisationsergebnis."
-                )
+                raise TypeError("Unbekanntes Synchronisationsergebnis.")
 
             aligned_video = _coerce_signal(
                 raw_video,
                 name=video.name,
                 unit=video.unit,
-                source=Path(
-                    video.source or "video"
-                ),
+                source=Path(video.source or "video"),
                 time_column=None,
                 value_column=None,
-                sample_rate_hz=(
-                    config.target_sample_rate_hz
-                ),
+                sample_rate_hz=config.target_sample_rate_hz,
             )
-
             aligned_imu = _coerce_signal(
                 raw_imu,
                 name=imu.name,
                 unit=imu.unit,
-                source=Path(
-                    imu.source or "imu"
-                ),
+                source=Path(imu.source or "imu"),
                 time_column=None,
                 value_column=None,
-                sample_rate_hz=(
-                    config.target_sample_rate_hz
-                ),
+                sample_rate_hz=config.target_sample_rate_hz,
             )
-
             metadata["implementation"] = (
                 f"{function.__module__}.{function.__name__}"
             )
-
-            return (
-                aligned_video,
-                aligned_imu,
-                _jsonable(metadata),
-            )
-
+            return aligned_video, aligned_imu, _jsonable(metadata)
         except Exception as exc:
             if config.strict_modules:
                 raise
-
             LOGGER.warning(
-                "Synchronisationsmodul fehlgeschlagen; "
-                "Fallback wird genutzt: %s",
+                "Synchronisationsmodul fehlgeschlagen; Fallback wird genutzt: %s",
                 exc,
             )
 
-    return _internal_synchronize(
-        video,
-        imu,
-        config,
-    )
+    return _internal_synchronize(video, imu, config)
 
 
 # =============================================================================
@@ -1283,41 +1172,24 @@ def compute_metrics(
         try:
             result = _call_supported(
                 function,
-
-                # Actual API of validation.metrics
-                time=video.time,
-                video_signal=video.values,
-                imu_signal=imu.values,
-                sampling_rate=video.sample_rate_hz,
-
-                # Compatibility aliases
                 reference=imu.values,
                 prediction=video.values,
                 y_true=imu.values,
                 y_pred=video.values,
+                video_signal=video,
+                imu_signal=imu,
                 video_values=video.values,
                 imu_values=imu.values,
+                time=video.time,
                 sample_rate_hz=video.sample_rate_hz,
                 synchronization=synchronization,
             )
-
             if isinstance(result, Mapping):
-                metrics = dict(
-                    _jsonable(result)
-                )
-
+                metrics = dict(_jsonable(result))
             elif isinstance(result, pd.Series):
-                metrics = dict(
-                    _jsonable(
-                        result.to_dict()
-                    )
-                )
-
+                metrics = dict(_jsonable(result.to_dict()))
             elif isinstance(result, pd.DataFrame):
-                if {
-                    "metric",
-                    "value",
-                }.issubset(result.columns):
+                if {"metric", "value"}.issubset(result.columns):
                     metrics = dict(
                         zip(
                             result["metric"].astype(str),
@@ -1326,45 +1198,24 @@ def compute_metrics(
                         )
                     )
                 else:
-                    metrics = {
-                        "table": _jsonable(result)
-                    }
-
+                    metrics = {"table": _jsonable(result)}
             elif dataclasses.is_dataclass(result):
-                metrics = dict(
-                    _jsonable(
-                        dataclasses.asdict(result)
-                    )
-                )
-
+                metrics = dict(_jsonable(dataclasses.asdict(result)))
             else:
-                metrics = dict(
-                    _jsonable(
-                        vars(result)
-                    )
-                )
-
+                metrics = dict(_jsonable(vars(result)))
             metrics.setdefault(
                 "implementation",
                 f"{function.__module__}.{function.__name__}",
             )
-
             return metrics
-
         except Exception as exc:
             if config.strict_modules:
                 raise
-
             LOGGER.warning(
-                "metrics-Modul fehlgeschlagen; "
-                "Fallback wird genutzt: %s",
-                exc,
+                "metrics-Modul fehlgeschlagen; Fallback wird genutzt: %s", exc
             )
 
-    return _internal_metrics(
-        video,
-        imu,
-    )
+    return _internal_metrics(video, imu)
 
 
 # =============================================================================
@@ -1443,10 +1294,7 @@ def create_plots(
         return []
 
     plot_dir = config.output_dir / "figures"
-    plot_dir.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    plot_dir.mkdir(parents=True, exist_ok=True)
 
     function = _find_callable(
         module,
@@ -1464,83 +1312,43 @@ def create_plots(
         try:
             result = _call_supported(
                 function,
-
-                # Actual API of validation.plotting
-                output_dir=plot_dir,
-                time=video.time,
-                video_signal=video.values,
-                imu_signal=imu.values,
-                sampling_rate=video.sample_rate_hz,
-
-                # Labels
-                video_label=video.name,
-                imu_label=imu.name,
-
-                # Compatibility aliases
+                video_signal=video,
+                imu_signal=imu,
                 video=video,
                 imu=imu,
+                time=video.time,
                 video_values=video.values,
                 imu_values=imu.values,
                 metrics=metrics,
                 synchronization=synchronization,
+                output_dir=plot_dir,
                 save_dir=plot_dir,
-                sample_rate_hz=video.sample_rate_hz,
                 show=False,
             )
-
             if result is None:
                 paths = sorted(
                     path
                     for path in plot_dir.iterdir()
                     if path.suffix.lower()
-                    in {
-                        ".png",
-                        ".jpg",
-                        ".jpeg",
-                        ".svg",
-                        ".webp",
-                    }
+                    in {".png", ".jpg", ".jpeg", ".svg", ".webp"}
                 )
-
             elif isinstance(result, Mapping):
-                paths = [
-                    Path(path)
-                    for path in result.values()
-                ]
-
+                paths = [Path(path) for path in result.values()]
             elif isinstance(result, (str, Path)):
                 paths = [Path(result)]
-
             else:
-                paths = [
-                    Path(path)
-                    for path in result
-                ]
-
-            paths = [
-                path
-                for path in paths
-                if path.exists()
-            ]
-
+                paths = [Path(path) for path in result]
+            paths = [path for path in paths if path.exists()]
             if paths:
                 return paths
-
         except Exception as exc:
             if config.strict_modules:
                 raise
-
             LOGGER.warning(
-                "plotting-Modul fehlgeschlagen; "
-                "Fallback wird genutzt: %s",
-                exc,
+                "plotting-Modul fehlgeschlagen; Fallback wird genutzt: %s", exc
             )
 
-    return _internal_plots(
-        video,
-        imu,
-        config.output_dir,
-    )
+    return _internal_plots(video, imu, config.output_dir)
 
 
 # =============================================================================
