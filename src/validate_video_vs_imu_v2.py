@@ -1443,41 +1443,72 @@ def _generate_report(
 # Hauptpipeline
 # =============================================================================
 
-def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
+def validate_video_vs_imu(
+    config: ValidationConfig,
+) -> ValidationResult:
     """Führt die vollständige Validierung aus."""
 
     started = perf_counter()
     warnings: list[str] = []
 
     if not config.video_path.is_file():
-        raise FileNotFoundError(f"Video-Tracking-Datei fehlt: {config.video_path}")
-    if not config.imu_path.is_file():
-        raise FileNotFoundError(f"IMU-Datei fehlt: {config.imu_path}")
-
-    if config.output_dir.exists() and not config.output_dir.is_dir():
-        raise NotADirectoryError(config.output_dir)
-    config.output_dir.mkdir(parents=True, exist_ok=True)
-
-    modules = {
-        name: _import_optional_module(name, strict=config.strict_modules)
-        for name in (
-            "video_loader",
-            "imu_loader",
-            "preprocessing",
-            "synchronization",
-            "metrics",
-            "plotting",
-            "report",
+        raise FileNotFoundError(
+            f"Video-Tracking-Datei fehlt: {config.video_path}"
         )
+
+    if not config.imu_path.is_file():
+        raise FileNotFoundError(
+            f"IMU-Datei fehlt: {config.imu_path}"
+        )
+
+    if (
+        config.output_dir.exists()
+        and not config.output_dir.is_dir()
+    ):
+        raise NotADirectoryError(config.output_dir)
+
+    config.output_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    module_paths = {
+        "video_loader": "validation.video_loader",
+        "imu_loader": "validation.imu_loader",
+        "preprocessing": "validation.preprocessing",
+        "synchronization": "validation.synchronization",
+        "metrics": "validation.metrics",
+        "plotting": "validation.plotting",
+        "report": "validation.report",
     }
 
-    LOGGER.info("1/7 Video-Tracking-Signal laden")
-    raw_video = load_video_signal(config, modules["video_loader"])
+    modules = {
+        key: _import_optional_module(module_path)
+        for key, module_path in module_paths.items()
+    }
 
-    LOGGER.info("2/7 IMU-Signal laden")
-    raw_imu = load_imu_signal(config, modules["imu_loader"])
+    LOGGER.info(
+        "1/7 Video-Tracking-Signal laden"
+    )
 
-    LOGGER.info("3/7 Signale vorverarbeiten")
+    raw_video = load_video_signal(
+        config,
+        modules["video_loader"],
+    )
+
+    LOGGER.info(
+        "2/7 IMU-Signal laden"
+    )
+
+    raw_imu = load_imu_signal(
+        config,
+        modules["imu_loader"],
+    )
+
+    LOGGER.info(
+        "3/7 Signale vorverarbeiten"
+    )
+
     processed_video = preprocess_signal(
         raw_video,
         kind="video",
@@ -1486,6 +1517,7 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
         config=config,
         module=modules["preprocessing"],
     )
+
     processed_imu = preprocess_signal(
         raw_imu,
         kind="imu",
@@ -1495,15 +1527,25 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
         module=modules["preprocessing"],
     )
 
-    LOGGER.info("4/7 Signale synchronisieren")
-    aligned_video, aligned_imu, synchronization_info = synchronize_signals(
+    LOGGER.info(
+        "4/7 Signale synchronisieren"
+    )
+
+    (
+        aligned_video,
+        aligned_imu,
+        synchronization_info,
+    ) = synchronize_signals(
         processed_video,
         processed_imu,
         config,
         modules["synchronization"],
     )
 
-    LOGGER.info("5/7 Kennzahlen berechnen")
+    LOGGER.info(
+        "5/7 Kennzahlen berechnen"
+    )
+
     metric_results = compute_metrics(
         aligned_video,
         aligned_imu,
@@ -1511,10 +1553,17 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
         config,
         modules["metrics"],
     )
-    metric_results.setdefault("estimated_lag_s", synchronization_info.get("lag_s"))
+
+    metric_results.setdefault(
+        "estimated_lag_s",
+        synchronization_info.get("lag_s"),
+    )
+
     metric_results.setdefault(
         "correlation_at_lag",
-        synchronization_info.get("correlation_at_lag"),
+        synchronization_info.get(
+            "correlation_at_lag"
+        ),
     )
 
     if config.save_intermediate:
@@ -1528,7 +1577,10 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
             aligned_imu,
         )
 
-    LOGGER.info("6/7 Abbildungen erzeugen")
+    LOGGER.info(
+        "6/7 Abbildungen erzeugen"
+    )
+
     figure_paths = create_plots(
         aligned_video,
         aligned_imu,
@@ -1540,9 +1592,16 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
 
     video_summary = raw_video.summary()
     imu_summary = raw_imu.summary()
+
     preprocessing_info = {
-        "video": processed_video.metadata.get("preprocessing", {}),
-        "imu": processed_imu.metadata.get("preprocessing", {}),
+        "video": processed_video.metadata.get(
+            "preprocessing",
+            {},
+        ),
+        "imu": processed_imu.metadata.get(
+            "preprocessing",
+            {},
+        ),
         "video_function": processed_video.metadata.get(
             "preprocessing_function",
             processed_video.metadata.get("loader"),
@@ -1553,7 +1612,10 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
         ),
     }
 
-    LOGGER.info("7/7 Bericht erzeugen")
+    LOGGER.info(
+        "7/7 Bericht erzeugen"
+    )
+
     report_artifacts = _generate_report(
         config,
         metric_results,
@@ -1567,19 +1629,31 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
     )
 
     runtime = perf_counter() - started
+
     result = ValidationResult(
         output_dir=config.output_dir.resolve(),
-        metrics=dict(_jsonable(metric_results)),
-        synchronization=dict(_jsonable(synchronization_info)),
+        metrics=dict(
+            _jsonable(metric_results)
+        ),
+        synchronization=dict(
+            _jsonable(synchronization_info)
+        ),
         video_summary=video_summary,
         imu_summary=imu_summary,
-        figure_paths=[path.resolve() for path in figure_paths],
+        figure_paths=[
+            path.resolve()
+            for path in figure_paths
+        ],
         report_artifacts=report_artifacts,
         warnings=warnings,
         runtime_s=runtime,
     )
 
-    _write_json(config.output_dir / "validation_result.json", result.as_dict())
+    _write_json(
+        config.output_dir / "validation_result.json",
+        result.as_dict(),
+    )
+
     _write_json(
         config.output_dir / "validation_config.json",
         dataclasses.asdict(config),
@@ -1590,8 +1664,8 @@ def validate_video_vs_imu(config: ValidationConfig) -> ValidationResult:
         runtime,
         config.output_dir.resolve(),
     )
-    return result
 
+    return result
 
 # =============================================================================
 # Konfigurationsdatei und CLI
