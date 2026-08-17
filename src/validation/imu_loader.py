@@ -52,31 +52,79 @@ def load_imu_signal(
         sep=r"\s+",
     )
 
-    # ----- time column -----
+    # ----- time axis -----
 
-    possible_time_columns = [
-        "time_seconds",
-        "time",
-        "timestamp",
-        "t",
-    ]
+    # Preferred format of the experimental IMU data:
+    # separate calendar date and clock-time columns, e.g.
+    #
+    # day         time
+    # 2022-04-16  19:46:31.122418
+    #
+    # Convert the absolute timestamps to a relative time axis
+    # starting at t = 0 s. This preserves the actual non-uniform
+    # sample timing contained in the measurement file.
 
-    time_column = None
+    if "day" in df.columns and "time" in df.columns:
+        timestamps = pd.to_datetime(
+            df["day"].astype(str)
+            + " "
+            + df["time"].astype(str),
+            errors="coerce",
+        )
 
-    for col in possible_time_columns:
-        if col in df.columns:
-            time_column = col
-            break
+        valid_timestamps = timestamps.notna()
 
-    if time_column is None:
-        time = np.arange(
+        if valid_timestamps.sum() < 2:
+            raise IMULoaderError(
+                "Could not construct a valid time axis from "
+                "'day' and 'time'."
+            )
+
+        # Keep invalid timestamps as NaN so that they can be removed
+        # together with invalid signal values below.
+        time = np.full(
             len(df),
+            np.nan,
             dtype=float,
         )
-    else:
-        time = df[time_column].to_numpy(
+
+        first_timestamp = timestamps.loc[
+            valid_timestamps
+        ].iloc[0]
+
+        time[valid_timestamps.to_numpy()] = (
+            timestamps.loc[valid_timestamps]
+            - first_timestamp
+        ).dt.total_seconds().to_numpy(
             dtype=float
         )
+
+    else:
+        possible_time_columns = [
+            "time_seconds",
+            "timestamp",
+            "t",
+        ]
+
+        time_column = None
+
+        for col in possible_time_columns:
+            if col in df.columns:
+                time_column = col
+                break
+
+        if time_column is None:
+            time = np.arange(
+                len(df),
+                dtype=float,
+            )
+        else:
+            time = pd.to_numeric(
+                df[time_column],
+                errors="coerce",
+            ).to_numpy(
+                dtype=float
+            )
 
     # ----- axis -----
 
