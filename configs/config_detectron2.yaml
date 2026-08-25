@@ -1,15 +1,22 @@
-video_path: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/video_side/GX010044.MP4
+video_path: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/vide_sides/GX010044.MP4
 
 output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/results.csv
 summary_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/summary.csv
 
+# =========================================================
+# Complete video processing
+# =========================================================
 start_frame: 0
-end_frame: 500
+end_frame: null
 
 resize_width: 1280
 resize_height: 720
 
 device: cuda
+
+# This controls only how often debug PNG files are saved.
+# It does NOT skip inference frames.
+detectron2_debug_stride: 10
 
 save_debug_frames: true
 debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/debug
@@ -27,7 +34,7 @@ detectron2_output_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracki
 detectron2_debug_dir: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/debug
 
 # =========================================================
-# Stabile OpenCV-ROI als Referenz / Ground-Truth-Baseline
+# Stable OpenCV ROIs as reference
 # =========================================================
 inner_pipe_roi: [470, 345, 260, 60]
 bed_roi: [755, 360, 430, 70]
@@ -35,7 +42,7 @@ bed_edge_roi: [755, 360, 430, 35]
 optical_box_roi: [450, 250, 760, 190]
 
 # =========================================================
-# Optional: Tracking / Optical Flow kompatibel halten
+# Optional compatibility settings
 # =========================================================
 enable_deflicker: true
 enable_tracking: true
@@ -52,17 +59,14 @@ bed_edge_median_window: 7
 bed_edge_ema_alpha: 0.2
 
 # =========================================================
-# Optical Flow Punkte bleiben als Referenz vorhanden
+# Optical-flow reference points
 # =========================================================
 optical_flow_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/detectron2_test/optical_flow.csv
 
 optical_flow_points:
-  # innere Rohr-/Reflexionsstruktur
   - [500, 315]
   - [600, 315]
   - [700, 315]
-
-  # Bettkante / Partikelbett-Oberkante
   - [800, 310]
   - [950, 310]
   - [1100, 310]
