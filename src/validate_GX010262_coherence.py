@@ -131,7 +131,7 @@ CONFIG = ValidationConfig(
     output_dir=Path(
         "/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/"
         "video_tracking_thesis/outputs/external_validation/"
-        "GX010262_coherence"
+        "GX010262_coherence1"
     ),
 
     video_time_column="time_seconds",
