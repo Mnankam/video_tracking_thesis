@@ -8,6 +8,9 @@ summary_csv: /mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/
 # =========================================================
 start_frame: 0
 end_frame: null
+frame_stride: 1
+detectron2_frame_stride: 1
+detectron2_debug_stride: 1
 
 resize_width: 1280
 resize_height: 720

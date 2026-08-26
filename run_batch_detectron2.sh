@@ -2,10 +2,10 @@
 
 #SBATCH --job-name=detectron2_full
 #SBATCH --partition=scc-gpu
-#SBATCH --gres=gpu:A100:1
-#SBATCH --time=12:00:00
-#SBATCH --mem=64G
-#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:H100:1
+#SBATCH --time=48:00:00
+#SBATCH --mem=128G
+#SBATCH --cpus-per-task=16
 #SBATCH --output=logs/detectron2_full_%j.out
 #SBATCH --error=logs/detectron2_full_%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -15,8 +15,13 @@ set -euo pipefail
 
 
 # =============================================================================
-# OpenCV / FFmpeg
+# CPU threads and OpenCV / FFmpeg
 # =============================================================================
+
+export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
+export OPENBLAS_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
+export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
+export NUMEXPR_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 
 export OPENCV_FFMPEG_READ_ATTEMPTS=131072
 export APPTAINERENV_OPENCV_FFMPEG_READ_ATTEMPTS=131072
@@ -34,7 +39,7 @@ DATA="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/data/vi
 
 BASE_CONFIG="$PROJECT/configs/config_detectron2.yaml"
 
-EXPERIMENT_NAME="Detectron2_GPU_FullFrames"
+EXPERIMENT_NAME="Detectron2_GPU_FullFrames_1"
 
 OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/${EXPERIMENT_NAME}"
 
@@ -46,10 +51,27 @@ OUT="/mnt/ceph-hdd/projects/mthesis_s_kouomnankam/video_tracking_thesis/outputs/
 mkdir -p "$OUT"
 mkdir -p "$OUT/logs"
 mkdir -p "$OUT/configs"
-
 mkdir -p "$PROJECT/logs"
 
 cd "$PROJECT"
+
+
+# =============================================================================
+# Allocated resources
+# =============================================================================
+
+echo "============================================================"
+echo "Allocated resources"
+echo "============================================================"
+echo "Job ID       : ${SLURM_JOB_ID:-unknown}"
+echo "Node         : ${SLURMD_NODENAME:-unknown}"
+echo "CPUs         : ${SLURM_CPUS_PER_TASK:-unknown}"
+echo "CUDA devices : ${CUDA_VISIBLE_DEVICES:-unknown}"
+
+nvidia-smi --query-gpu=name,memory.total,driver_version \
+    --format=csv,noheader || true
+
+echo "============================================================"
 
 
 # =============================================================================
@@ -107,9 +129,7 @@ VIDEO_COUNTER=0
 SUCCESS_COUNTER=0
 FAIL_COUNTER=0
 
-
 for video in "${VIDEOS[@]}"; do
-
     VIDEO_COUNTER=$((VIDEO_COUNTER + 1))
 
     name=$(basename "$video" .MP4)
@@ -118,7 +138,6 @@ for video in "${VIDEOS[@]}"; do
     echo "============================================================"
     echo "[$VIDEO_COUNTER/${#VIDEOS[@]}] Processing $name"
     echo "============================================================"
-
 
     CONFIG_OUT="$OUT/configs/config_${name}.yaml"
 
@@ -134,6 +153,7 @@ for video in "${VIDEOS[@]}"; do
 
     ANALYSIS_DIR="$OUT/analysis_${name}"
 
+    ANIMATION_OUT="$OUT/${name}_detectron2_animation.mp4"
 
     mkdir -p \
         "$DEBUG_OUT" \
@@ -144,11 +164,11 @@ for video in "${VIDEOS[@]}"; do
     # =========================================================================
     # Generate video-specific configuration
     #
-    # In addition to replacing paths, explicitly force a complete run:
-    #
-    #     start_frame: 0
-    #     end_frame: null
-    #
+    # Forces full-video processing and one inference per frame:
+    #   start_frame: 0
+    #   end_frame: null
+    #   frame_stride: 1
+    #   detectron2_frame_stride: 1
     # =========================================================================
 
     sed \
@@ -157,6 +177,8 @@ for video in "${VIDEOS[@]}"; do
         -e "s|^detectron2_debug_dir:.*|detectron2_debug_dir: $DEBUG_OUT|" \
         -e "s|^start_frame:.*|start_frame: 0|" \
         -e "s|^end_frame:.*|end_frame: null|" \
+        -e "s|^frame_stride:.*|frame_stride: 1|" \
+        -e "s|^detectron2_frame_stride:.*|detectron2_frame_stride: 1|" \
         "$BASE_CONFIG" \
         > "$CONFIG_OUT"
 
@@ -166,8 +188,9 @@ for video in "${VIDEOS[@]}"; do
     # =========================================================================
 
     echo "Generated configuration:"
+
     grep -E \
-        "^(video_path|start_frame|end_frame|detectron2_output_csv|detectron2_debug_dir):" \
+        "^(video_path|start_frame|end_frame|frame_stride|detectron2_frame_stride|detectron2_debug_stride|detectron2_output_csv|detectron2_debug_dir):" \
         "$CONFIG_OUT" \
         || true
 
@@ -179,7 +202,6 @@ for video in "${VIDEOS[@]}"; do
     echo
     echo "Running full-frame Detectron2 inference..."
 
-
     if apptainer exec --nv \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
         -B "$PROJECT":"$PROJECT" \
@@ -190,17 +212,12 @@ for video in "${VIDEOS[@]}"; do
             --debug-dir "$DEBUG_OUT" \
         > "$OUT/logs/${name}_detectron2.log" 2>&1
     then
-
         echo "Detectron2 inference finished: $name"
-
     else
-
         echo "ERROR: Detectron2 inference failed: $name"
-        echo "Log:"
-        echo "$OUT/logs/${name}_detectron2.log"
+        echo "Log: $OUT/logs/${name}_detectron2.log"
 
         FAIL_COUNTER=$((FAIL_COUNTER + 1))
-
         continue
     fi
 
@@ -214,17 +231,14 @@ for video in "${VIDEOS[@]}"; do
         echo "$FRAME_OUT"
 
         FAIL_COUNTER=$((FAIL_COUNTER + 1))
-
         continue
     fi
-
 
     if [ ! -f "$BENCHMARK_OUT" ]; then
         echo "ERROR: Missing benchmark output:"
         echo "$BENCHMARK_OUT"
 
         FAIL_COUNTER=$((FAIL_COUNTER + 1))
-
         continue
     fi
 
@@ -234,7 +248,6 @@ for video in "${VIDEOS[@]}"; do
     # =========================================================================
 
     echo "Running Detectron2 analysis..."
-
 
     if apptainer exec --nv \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
@@ -246,13 +259,10 @@ for video in "${VIDEOS[@]}"; do
             --out-dir "$ANALYSIS_DIR" \
         > "$OUT/logs/${name}_detectron2_analysis.log" 2>&1
     then
-
         echo "Analysis finished: $name"
-
     else
-
         echo "WARNING: Analysis failed: $name"
-
+        echo "Log: $OUT/logs/${name}_detectron2_analysis.log"
     fi
 
 
@@ -261,7 +271,6 @@ for video in "${VIDEOS[@]}"; do
     # =========================================================================
 
     echo "Running Detectron2 plots..."
-
 
     if apptainer exec --nv \
         -B /mnt/ceph-hdd:/mnt/ceph-hdd \
@@ -272,13 +281,38 @@ for video in "${VIDEOS[@]}"; do
             --out-dir "$PLOT_DIR" \
         > "$OUT/logs/${name}_detectron2_plot.log" 2>&1
     then
-
         echo "Plots finished: $name"
-
     else
-
         echo "WARNING: Plot generation failed: $name"
+        echo "Log: $OUT/logs/${name}_detectron2_plot.log"
+    fi
 
+
+    # =========================================================================
+    # Frame-by-frame animation
+    #
+    # This reads every original video frame, but it does not run inference.
+    # It overlays the detections available in DETECTRON2_OUT.
+    # =========================================================================
+
+    echo "Creating Detectron2 animation..."
+
+    if apptainer exec --nv \
+        -B /mnt/ceph-hdd:/mnt/ceph-hdd \
+        -B "$PROJECT":"$PROJECT" \
+        "$CONTAINER" \
+        python -m src.animate_detectron2_results \
+            --config "$CONFIG_OUT" \
+            --csv "$DETECTRON2_OUT" \
+            --out "$ANIMATION_OUT" \
+            --expected-stride 1 \
+            --draw-reference-rois \
+        > "$OUT/logs/${name}_detectron2_animation.log" 2>&1
+    then
+        echo "Animation finished: $name"
+    else
+        echo "WARNING: Animation generation failed: $name"
+        echo "Log: $OUT/logs/${name}_detectron2_animation.log"
     fi
 
 
@@ -290,12 +324,10 @@ for video in "${VIDEOS[@]}"; do
     echo "Benchmark result for $name:"
     cat "$BENCHMARK_OUT"
 
-
     SUCCESS_COUNTER=$((SUCCESS_COUNTER + 1))
 
     echo
     echo "Completed: $name"
-
 done
 
 
