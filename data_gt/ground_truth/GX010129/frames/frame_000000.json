@@ -1,0 +1,62 @@
+{
+  "version": "6.3.1",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "frame_000000_inner_pipe",
+      "points": [
+        [
+          697.5,
+          438.75
+        ],
+        [
+          1091.9483944954127,
+          426.79701834862306
+        ],
+        [
+          1096.25,
+          568.75
+        ],
+        [
+          701.8016055045874,
+          580.702981651377
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "oriented_rectangle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "frame_000000_particle_bed",
+      "points": [
+        [
+          1157.5,
+          500.0
+        ],
+        [
+          1864.0302656988742,
+          492.26426716387994
+        ],
+        [
+          1866.25,
+          695.0
+        ],
+        [
+          1159.7197343011258,
+          702.7357328361201
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "oriented_rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "frame_000000.png",
+  "imageData": null,
+  "imageHeight": 1080,
+  "imageWidth": 1920
+}
